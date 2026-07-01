@@ -287,7 +287,6 @@ SettingsPageComponent::SettingsPageComponent(LauncherComponent* lc) {
   bluetoothCategoryItem = new BluetoothCategoryItemComponent();
   bluetoothCategoryItem->button->addListener(this);
   addAndMakeVisible(bluetoothCategoryItem);
-  // getBluetoothStatus().addListener(bluetoothCategoryItem); // Uncomment if BluetoothStatus has listeners
 
   addAndMakeVisible(screenBrightnessSlider);
   addAndMakeVisible(volumeSlider);
