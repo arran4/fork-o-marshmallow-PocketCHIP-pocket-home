@@ -284,10 +284,16 @@ SettingsPageComponent::SettingsPageComponent(LauncherComponent* lc) {
   addAndMakeVisible(wifiCategoryItem);
   getWifiStatus().addListener(wifiCategoryItem);
 
+  bluetoothCategoryItem = new BluetoothCategoryItemComponent();
+  bluetoothCategoryItem->button->addListener(this);
+  addAndMakeVisible(bluetoothCategoryItem);
+  // getBluetoothStatus().addListener(bluetoothCategoryItem); // Uncomment if BluetoothStatus has listeners
+
   addAndMakeVisible(screenBrightnessSlider);
   addAndMakeVisible(volumeSlider);
 
   wifiPage = new SettingsPageWifiComponent();
+  bluetoothPage = new SettingsPageBluetoothComponent();
 }
 
 SettingsPageComponent::~SettingsPageComponent() {}
@@ -304,8 +310,8 @@ void SettingsPageComponent::paint(Graphics &g) {
 
 void SettingsPageComponent::resized() {
   auto bounds = getLocalBounds();
-  int numRows = 4;
-  double rowProp = 0.6/numRows;
+  int numRows = 5;
+  double rowProp = 0.7/numRows;
   {
     for (int i = 0, j = 0; i < numRows; ++i) {
       if (i > 0) verticalLayout.setItemLayout(j++, 0, -1, -1);
@@ -314,6 +320,7 @@ void SettingsPageComponent::resized() {
 
     Component *settingsItems[] = {
       wifiCategoryItem, nullptr,
+      bluetoothCategoryItem, nullptr,
       screenBrightnessSlider, nullptr,
       volumeSlider, nullptr,
       advanced
@@ -340,6 +347,8 @@ void SettingsPageComponent::buttonClicked(Button *button) {
   } else if (button == wifiCategoryItem->button) {
     wifiPage->updateAccessPoints();
     getMainStack().pushPage(wifiPage, PageStackComponent::kTransitionTranslateHorizontal);
+  } else if (button == bluetoothCategoryItem->button) {
+    getMainStack().pushPage(bluetoothPage, PageStackComponent::kTransitionTranslateHorizontal);
   } else if (button == advanced) {
     getMainStack().pushPage(advancedPage, PageStackComponent::kTransitionTranslateHorizontal);
   }
