@@ -1,0 +1,393 @@
+# Agent rules for generation:
+# https://arran4.github.io/blog/post/2026/006-github-ci-and-deploy/
+# Built using this post as a reference/guide.
+name: CI/CD
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+      - 'v*.*.*'
+      - 'v*.*.*-rc*'
+      - 'v*.*.*-beta*'
+      - 'test-*'
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, closed]
+    branches: [main, master]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Pipeline mode"
+        required: true
+        default: "lint-fix"
+        type: choice
+        options:
+          - lint-fix
+          - build
+          - release-major
+          - release-minor
+          - release-patch
+          - release-test
+          - release-rc
+          - release-alpha
+          - monthly-maintenance
+      release_version_override:
+        description: "Optional explicit release version (for example 2.4.0 or 2.4.0-rc.2)"
+        required: false
+        default: ""
+        type: string
+      allow_prs:
+        description: "Allow automation to open pull requests"
+        required: false
+        default: true
+        type: boolean
+  schedule:
+    - cron: '17 3 1 * *'
+    - cron: '41 2 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  discussions: write
+  pull-requests: write
+  checks: write
+  packages: write
+  security-events: write
+  pages: write
+
+jobs:
+  route:
+    name: Route event
+    runs-on: ubuntu-latest
+    outputs:
+      run_code_checks: ${{ steps.route.outputs.run_code_checks }}
+      run_pr_meta_checks: ${{ steps.route.outputs.run_pr_meta_checks }}
+      run_cleanup: ${{ steps.route.outputs.run_cleanup }}
+      run_release: ${{ steps.route.outputs.run_release }}
+      is_monthly: ${{ steps.route.outputs.is_monthly }}
+      is_nightly: ${{ steps.route.outputs.is_nightly }}
+    steps:
+      - id: route
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          run_code_checks=false
+          run_pr_meta_checks=false
+          run_cleanup=false
+          run_release=false
+          is_monthly=false
+          is_nightly=false
+
+          case "${{ github.event_name }}" in
+            push)
+              run_code_checks=true
+              if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+                run_release=true
+              fi
+              ;;
+            pull_request)
+              if [[ "${{ github.event.action }}" == "closed" ]]; then
+                run_cleanup=true
+              else
+                run_pr_meta_checks=true
+                run_code_checks=true
+              fi
+              ;;
+            release)
+              run_release=true
+              ;;
+            workflow_dispatch)
+              run_code_checks=true
+              if [[ "${{ inputs.mode }}" == release-* ]]; then
+                run_release=true
+              fi
+              if [[ "${{ inputs.mode }}" == "monthly-maintenance" ]]; then
+                is_monthly=true
+              fi
+              if [[ "${{ inputs.mode }}" == "lint-fix" ]]; then
+                is_nightly=true
+              fi
+              ;;
+            schedule)
+              run_code_checks=true
+              if [[ "${{ github.event.schedule }}" == "17 3 1 * *" ]]; then
+                is_monthly=true
+              fi
+              if [[ "${{ github.event.schedule }}" == "41 2 * * *" ]]; then
+                is_nightly=true
+              fi
+              ;;
+          esac
+
+          echo "run_code_checks=$run_code_checks" >> "$GITHUB_OUTPUT"
+          echo "run_pr_meta_checks=$run_pr_meta_checks" >> "$GITHUB_OUTPUT"
+          echo "run_cleanup=$run_cleanup" >> "$GITHUB_OUTPUT"
+          echo "run_release=$run_release" >> "$GITHUB_OUTPUT"
+          echo "is_monthly=$is_monthly" >> "$GITHUB_OUTPUT"
+          echo "is_nightly=$is_nightly" >> "$GITHUB_OUTPUT"
+
+  prepare-release-tag:
+    name: Prepare release tag
+    needs: [route]
+    if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-') }}
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.tag.outputs.release_tag }}
+      next_version: ${{ steps.tag.outputs.next_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup git-tag-inc
+        uses: arran4/git-tag-inc-action@v1
+        with:
+          mode: install
+      - id: tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          MODE="${{ inputs.mode }}"
+          OVERRIDE="${{ inputs.release_version_override }}"
+
+          if [[ -n "$OVERRIDE" ]]; then
+            OVERRIDE="${OVERRIDE#v}"
+            next_tag="v$OVERRIDE"
+          else
+            case "$MODE" in
+              release-major) level="major"; suffix="" ;;
+              release-minor) level="minor"; suffix="" ;;
+              release-patch) level="patch"; suffix="" ;;
+              release-test)  level="patch"; suffix="test" ;;
+              release-rc)    level="patch"; suffix="rc" ;;
+              release-alpha) level="patch"; suffix="alpha" ;;
+              *) echo "Unsupported release mode: $MODE"; exit 1 ;;
+            esac
+            if command -v git-tag-inc >/dev/null 2>&1; then
+              level="${level#-}"
+              args=(-print-version-only "$level")
+              [[ -n "$suffix" ]] && args+=("$suffix")
+              next_tag=$(git-tag-inc "${args[@]}")
+            else
+              git fetch --tags --force
+              latest=$(git tag -l 'v*' | sed 's/^v//' | sort -V | tail -n 1)
+              [[ -z "$latest" ]] && latest='0.0.0'
+
+              if command -v npx >/dev/null 2>&1; then
+                case "$level" in
+                  major) bumped=$(npx --yes semver "$latest" -i major) ;;
+                  minor) bumped=$(npx --yes semver "$latest" -i minor) ;;
+                  *) bumped=$(npx --yes semver "$latest" -i patch) ;;
+                esac
+                next_tag="v${bumped}"
+              else
+                base="${latest%%-*}"
+                IFS='.' read -r maj min pat <<< "$base"
+                case "$level" in
+                  major) maj=$((maj+1)); min=0; pat=0 ;;
+                  minor) min=$((min+1)); pat=0 ;;
+                  *) pat=$((pat+1)) ;;
+                esac
+                next_tag="v${maj}.${min}.${pat}"
+              fi
+
+              if [[ -n "$suffix" ]]; then
+                next_tag="${next_tag}-${suffix}.1"
+              fi
+            fi
+          fi
+
+          [[ "$next_tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]] || {
+            echo "Invalid tag format: $next_tag" >&2
+            exit 1
+          }
+          git fetch --tags --force
+          if git rev-parse "$next_tag" >/dev/null 2>&1; then
+            echo "Tag already exists: $next_tag" >&2
+            echo "Choose a new mode or set release_version_override." >&2
+            exit 1
+          fi
+
+          echo "release_tag=$next_tag" >> "$GITHUB_OUTPUT"
+          clean_tag="${next_tag#v}"; clean_tag="${clean_tag%%-*}"
+          IFS='.' read -r maj min pat <<< "$clean_tag"
+          echo "next_version=${maj:-0}.${min:-0}.$(( ${pat:-0} + 1 ))-SNAPSHOT" >> "$GITHUB_OUTPUT"
+
+  c-make-build-test:
+    name: Classic C Makefile build
+    needs: [route]
+    if: ${{ needs.route.outputs.run_code_checks == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-dev network-manager-dev libi2c-dev libssl-dev pkg-config libfreetype6-dev
+          sed -i "s/NetworkManager libnm-glib/libnm/g" Builds/LinuxMakefile/Makefile
+          cat << 'EOF' > juce.patch
+--- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
++++ deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+@@ -109,10 +109,10 @@
+     // It might be possible to force GCC to do so, but the GCC manual is very vague about
+     // the #pragma pack arguments, and it seems to just ignore them. So
+     // NB these are here as a workaround because GCC refuses to bind to packed values.
+-    forcedinline uint8& getAlpha() noexcept           { return comps [indexA]; }
+-    forcedinline uint8& getRed() noexcept             { return comps [indexR]; }
+-    forcedinline uint8& getGreen() noexcept           { return comps [indexG]; }
+-    forcedinline uint8& getBlue() noexcept            { return comps [indexB]; }
++    forcedinline uint8& getAlpha() noexcept           { return *const_cast<uint8*>(&comps[indexA]); }
++    forcedinline uint8& getRed() noexcept             { return *const_cast<uint8*>(&comps[indexR]); }
++    forcedinline uint8& getGreen() noexcept           { return *const_cast<uint8*>(&comps[indexG]); }
++    forcedinline uint8& getBlue() noexcept            { return *const_cast<uint8*>(&comps[indexB]); }
+    #else
+     forcedinline uint8& getAlpha() noexcept           { return components.a; }
+     forcedinline uint8& getRed() noexcept             { return components.r; }
+EOF
+          patch -p0 < juce.patch || true
+      - run: make -C Builds/LinuxMakefile
+      - run: make wifitest || true
+
+  build-release-deb:
+    name: Build Debian Release Package
+    needs: [route]
+    if: ${{ needs.route.outputs.run_release == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build and Package
+        uses: uraimo/run-on-arch-action@v2
+        id: build
+        with:
+          arch: armv7
+          distro: buster
+          githubToken: ${{ github.token }}
+          install: |
+            apt-get update
+            apt-get install -y build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config fakeroot
+          run: |
+            cat << 'EOF' > juce.patch
+--- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
++++ deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+@@ -109,10 +109,10 @@
+     // It might be possible to force GCC to do so, but the GCC manual is very vague about
+     // the #pragma pack arguments, and it seems to just ignore them. So
+     // NB these are here as a workaround because GCC refuses to bind to packed values.
+-    forcedinline uint8& getAlpha() noexcept           { return comps [indexA]; }
+-    forcedinline uint8& getRed() noexcept             { return comps [indexR]; }
+-    forcedinline uint8& getGreen() noexcept           { return comps [indexG]; }
+-    forcedinline uint8& getBlue() noexcept            { return comps [indexB]; }
++    forcedinline uint8& getAlpha() noexcept           { return *const_cast<uint8*>(&comps[indexA]); }
++    forcedinline uint8& getRed() noexcept             { return *const_cast<uint8*>(&comps[indexR]); }
++    forcedinline uint8& getGreen() noexcept           { return *const_cast<uint8*>(&comps[indexG]); }
++    forcedinline uint8& getBlue() noexcept            { return *const_cast<uint8*>(&comps[indexB]); }
+    #else
+     forcedinline uint8& getAlpha() noexcept           { return components.a; }
+     forcedinline uint8& getRed() noexcept             { return components.r; }
+EOF
+            patch -p0 < juce.patch || true
+            make -j$(nproc)
+            make pack
+            mkdir -p out
+            cp pocket-home_*.deb out/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pocket-home-deb
+          retention-days: 1
+          path: out/pocket-home_*.deb
+
+  publish-release:
+    name: Publish Release and APT Repo
+    needs: [route, build-release-deb, prepare-release-tag]
+    if: ${{ !failure() && !cancelled() && needs.route.outputs.run_release == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      discussions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pocket-home-deb
+          path: new-deb
+
+      - name: Tag commit for release (workflow_dispatch)
+        if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-') }}
+        run: |
+          git tag -f ${{ needs.prepare-release-tag.outputs.release_tag }}
+          git push -f origin ${{ needs.prepare-release-tag.outputs.release_tag }}
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event_name == 'workflow_dispatch' && needs.prepare-release-tag.outputs.release_tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          prerelease=""
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            case "${{ inputs.mode }}" in
+              release-test|release-rc|release-alpha) prerelease="--prerelease" ;;
+            esac
+          fi
+
+          # Use Announcement category if possible, else standard notes
+          gh release create "$TAG" new-deb/*.deb --generate-notes $prerelease --discussion-category Announcements || \
+            gh release create "$TAG" new-deb/*.deb --generate-notes $prerelease || true
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+        continue-on-error: true
+
+      - name: Setup GPG
+        id: import-gpg
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Generate APT Repository
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y reprepro
+
+          mkdir -p repo
+          if [ -d "gh-pages/archive" ]; then
+            cp -a gh-pages/archive/. repo/ || true
+          fi
+
+          mkdir -p repo/conf
+          cat << REPOCONF > repo/conf/distributions
+          Codename: jessie
+          Components: main
+          Architectures: armhf
+          SignWith: ${{ steps.import-gpg.outputs.fingerprint }}
+          REPOCONF
+
+          reprepro -b repo includedeb jessie new-deb/*.deb
+          gpg --armor --export ${{ steps.import-gpg.outputs.fingerprint }} > repo/public.key
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./repo
+          destination_dir: archive
