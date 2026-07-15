@@ -276,7 +276,7 @@ EOF
           githubToken: ${{ github.token }}
           install: |
             apt-get update
-            apt-get install -y build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config fakeroot
+            apt-get install -y build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config fakeroot debhelper
           run: |
             cat << 'EOF' > juce.patch
 --- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
@@ -298,10 +298,9 @@ EOF
      forcedinline uint8& getRed() noexcept             { return components.r; }
 EOF
             patch -p0 < juce.patch || true
-            make -j$(nproc)
-            make pack
+            dpkg-buildpackage -aarmhf -us -uc -b
             mkdir -p out
-            cp pocket-home_*.deb out/
+            cp ../pocket-home_*.deb out/
       - uses: actions/upload-artifact@v4
         with:
           name: pocket-home-deb
