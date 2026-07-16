@@ -1,0 +1,8 @@
+echo "Wait, 'gh release create \"\$TAG\" new-deb/*.deb'"
+echo "What happens if there are NO files in new-deb/*.deb? 'gh release create' will fail!"
+echo "Is it possible that build-release-deb ran but didn't produce the artifact?"
+echo "If build-release-deb produced the artifact, it would upload it."
+echo "But we saw 0 artifacts in run 29394511279."
+echo "If there are 0 artifacts, either build-release-deb failed, or it didn't run."
+echo "Since we saw it didn't run, 'run_release' MUST HAVE evaluated to false."
+echo "I will change Route event to evaluate run_release directly using GitHub Actions expressions."

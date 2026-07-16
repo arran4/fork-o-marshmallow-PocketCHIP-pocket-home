@@ -1,0 +1,8 @@
+echo "Wait, when you look at ci.yml in the repo."
+echo "I noticed: publish-release has 'needs: [route, build-release-deb, prepare-release-tag]'"
+echo "If github.event_name is 'push', prepare-release-tag is skipped."
+echo "BUT what if github.event_name is 'workflow_dispatch' and mode is 'release-*'?"
+echo "prepare-release-tag runs successfully!"
+echo "Then route outputs run_release=true."
+echo "But build-release-deb STILL doesn't run?!"
+echo "Let me check the exact outputs of the Route event job for run 29394511279."

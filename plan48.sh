@@ -1,0 +1,5 @@
+echo "Is it possible that build-release-deb DID run but was dropped from the UI because of some error like missing action?"
+echo "If 'uraimo/run-on-arch-action@v2' had an issue, it would show as failed."
+echo "Wait, could it be that 'build-release-deb' failed because of a syntax error in the YAML, so GitHub Actions dropped it?"
+echo "If there's a syntax error in YAML, the workflow doesn't even start, it fails immediately."
+echo "Wait, could the user have fixed it recently?"

@@ -105,13 +105,17 @@ jobs:
               ;;
             workflow_dispatch)
               run_code_checks=true
-              if [[ "${{ inputs.mode }}" == release-* ]]; then
+              INPUT_MODE="${{ inputs.mode }}"
+              if [[ -z "$INPUT_MODE" ]]; then
+                INPUT_MODE="${{ github.event.inputs.mode }}"
+              fi
+              if [[ "$INPUT_MODE" == release-* ]]; then
                 run_release=true
               fi
-              if [[ "${{ inputs.mode }}" == "monthly-maintenance" ]]; then
+              if [[ "$INPUT_MODE" == "monthly-maintenance" ]]; then
                 is_monthly=true
               fi
-              if [[ "${{ inputs.mode }}" == "lint-fix" ]]; then
+              if [[ "$INPUT_MODE" == "lint-fix" ]]; then
                 is_nightly=true
               fi
               ;;
@@ -347,7 +351,8 @@ EOF
 
           # Use Announcement category if possible, else standard notes
           gh release create "$TAG" new-deb/*.deb --generate-notes $prerelease --discussion-category Announcements || \
-            gh release create "$TAG" new-deb/*.deb --generate-notes $prerelease || true
+            gh release create "$TAG" new-deb/*.deb --generate-notes $prerelease || \
+            gh release upload "$TAG" new-deb/*.deb --clobber || true
 
       - name: Checkout gh-pages
         uses: actions/checkout@v4

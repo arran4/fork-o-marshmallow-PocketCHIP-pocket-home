@@ -1,0 +1,7 @@
+echo "Wait, if run_release evaluates to true, maybe we should also check publish-release's 'if' condition."
+echo "if: \${{ !failure() && !cancelled() && needs.route.outputs.run_release == 'true' }}"
+echo "Wait, if 'build-release-deb' FAILS or is SKIPPED..."
+echo "Is it possible that build-release-deb was intentionally SKIPPED because of some other condition?"
+echo "    if: \${{ needs.route.outputs.run_release == 'true' }}"
+echo "I'll edit the Route event's bash script to be 100% sure the evaluation handles correctly."
+echo "And I will also change Route event to evaluate 'run_release' correctly."
