@@ -1,7 +1,0 @@
-echo "Wait, is it possible that 'run_release' output in Route event was NOT set because the Route step FAILED?"
-echo "No, Route event was successful."
-echo "Wait, could it be that 'run_release' output was evaluated to FALSE because 'workflow_dispatch' is NOT triggering 'if [[ \"\${{ inputs.mode }}\" == release-* ]]; then run_release=true'?"
-echo "Look closely at the ci.yml file!"
-echo "Is it possible that github actions requires outputs to be strings in if condition?"
-echo "Yes, \${{ needs.route.outputs.run_release == 'true' }} is correct."
-echo "Let me check the logs for the user's action run..."

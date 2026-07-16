@@ -1,5 +1,0 @@
-echo "Ah, if 'build-release-deb' is SKIPPED, then 'needs.build-release-deb.result' is 'skipped'."
-echo "But 'publish-release' has 'if: \${{ !failure() && !cancelled() && needs.route.outputs.run_release == 'true' }}'."
-echo "If 'needs.route.outputs.run_release' is FALSE, then 'publish-release' is ALSO SKIPPED!"
-echo "So 'publish-release' didn't run because 'run_release' is FALSE!"
-echo "Why is 'run_release' FALSE???"

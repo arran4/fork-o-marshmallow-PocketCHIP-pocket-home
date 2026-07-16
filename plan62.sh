@@ -1,7 +1,0 @@
-echo "Wait! BUT why did run 29394511279 NOT EVEN run 'build-release-deb'?"
-echo "Because run_release was FALSE!"
-echo "If run_release was FALSE in 29394511279, it's because 'inputs.mode' in bash was evaluating differently."
-echo "If I fix BOTH:"
-echo "1. The bash evaluation of inputs.mode in Route event."
-echo "2. The 'gh release upload' fallback in publish-release."
-echo "Then it should cover all bases."

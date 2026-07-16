@@ -1,6 +1,0 @@
-echo "The API returns nothing because 'build-release-deb' did not run, likely because it was evaluated as skipped."
-echo "If it was skipped, it should still show up! Unless the matrix is empty (which is not applicable here)."
-echo "Or wait, sometimes skipped jobs ARE excluded from the API."
-echo "Let's check the bug again."
-echo "Bug: 'I am expecting github releases with downloads when I run a tag release as per arran4.github.io/blog/post/2026/011-simplified-github-ci/'"
-echo "What does the blog say for publish-release 'if'?"

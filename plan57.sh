@@ -1,5 +1,0 @@
-echo "Ah, look at this. The user runs 'workflow_dispatch' with inputs.mode."
-echo "If inputs.mode = release-test, it SHOULD evaluate to true."
-echo "But in github actions, \${{ inputs.mode }} is only available via github.event.inputs.mode if we're not inside reusable workflow, but actually \${{ inputs.mode }} works in normal workflows too now."
-echo "Let me modify .github/workflows/ci.yml"
-echo "I'll use sed to replace the logic."

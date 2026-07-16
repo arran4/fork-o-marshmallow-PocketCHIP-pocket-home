@@ -1,8 +1,0 @@
-echo "Ah!"
-echo "If inputs.mode == 'release-patch'"
-echo "Wait, when using inputs in run, if it is 'inputs', we can use \${{ github.event.inputs.mode }} or \${{ inputs.mode }}."
-echo "Is it possible that github actions inputs object evaluates to null in 'run' block? "
-echo "Yes! inputs.mode is valid in 'if:' and 'env:', but wait... is it valid in 'run:'?"
-echo "Yes, \${{ inputs.mode }} should be valid anywhere."
-echo "Wait. What if I missed something."
-echo "Let's run a test workflow dispatch run and check the outputs."

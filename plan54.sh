@@ -1,8 +1,0 @@
-echo "Wait. Did the user mean that they WANT it to trigger on a TAG PUSH but it didn't?"
-echo "If I look at run 29394504518 (which was a push):"
-echo "It triggered on 'master' branch, NOT a tag."
-echo "If it's on 'master', it shouldn't release."
-echo "Wait, when the user says 'when I run a tag release', what do they mean?"
-echo "Maybe they mean 'when I select \"release-*\" from the \"mode\" dropdown in the workflow_dispatch UI'?"
-echo "If that's what they mean, then why did run 29394511279 NOT build the deb?"
-echo "Let's change Route event to evaluate 'run_release' directly using GitHub Actions expressions."
