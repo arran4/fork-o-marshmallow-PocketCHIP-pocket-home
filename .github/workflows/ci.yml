@@ -234,11 +234,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Build and Test in Buster Container
+      - name: Build and Test in Jessie Container
         uses: uraimo/run-on-arch-action@v2
         with:
           arch: armv7
-          distro: buster
+          distro: jessie
           githubToken: ${{ github.token }}
           install: |
             apt-get update
@@ -282,7 +282,7 @@ EOF
         id: build
         with:
           arch: armv7
-          distro: buster
+          distro: jessie
           githubToken: ${{ github.token }}
           install: |
             apt-get update
