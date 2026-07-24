@@ -241,8 +241,13 @@ jobs:
           distro: jessie
           githubToken: ${{ github.token }}
           install: |
-            apt-get update
-            apt-get install -y build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config libfreetype6-dev dos2unix i2c-tools
+            cat << 'EOF' > /etc/apt/sources.list
+            deb http://archive.debian.org/debian jessie main
+            deb http://archive.debian.org/debian-security jessie/updates main
+            EOF
+            echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+            apt-get update -o Acquire::Check-Valid-Until=false || true
+            apt-get install -y --force-yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config libfreetype6-dev dos2unix i2c-tools
           run: |
             dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
             cat << 'EOF' > juce.patch
@@ -285,8 +290,13 @@ EOF
           distro: jessie
           githubToken: ${{ github.token }}
           install: |
-            apt-get update
-            apt-get install -y build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config fakeroot debhelper dos2unix libfreetype6-dev i2c-tools
+            cat << 'EOF' > /etc/apt/sources.list
+            deb http://archive.debian.org/debian jessie main
+            deb http://archive.debian.org/debian-security jessie/updates main
+            EOF
+            echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+            apt-get update -o Acquire::Check-Valid-Until=false || true
+            apt-get install -y --force-yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config fakeroot debhelper dos2unix libfreetype6-dev i2c-tools
           run: |
             dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
             cat << 'EOF' > juce.patch
