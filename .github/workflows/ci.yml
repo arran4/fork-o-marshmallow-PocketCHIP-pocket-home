@@ -234,12 +234,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-dev network-manager-dev libi2c-dev libssl-dev pkg-config libfreetype6-dev
-          sed -i "s/NetworkManager libnm-glib/libnm/g" Builds/LinuxMakefile/Makefile
-          cat << 'EOF' > juce.patch
+      - name: Build and Test in Jessie Container
+        uses: uraimo/run-on-arch-action@v2
+        with:
+          arch: armv7
+          distro: jessie
+          githubToken: ${{ github.token }}
+          install: |
+            cat << 'EOF' > /etc/apt/sources.list
+            deb http://archive.debian.org/debian jessie main
+            deb http://archive.debian.org/debian-security jessie/updates main
+            EOF
+            echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+            apt-get update -o Acquire::Check-Valid-Until=false || true
+            apt-get install -y --force-yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config libfreetype6-dev dos2unix i2c-tools
+          run: |
+            dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+            cat << 'EOF' > juce.patch
 --- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
 +++ deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
 @@ -109,10 +109,10 @@
@@ -258,9 +269,9 @@ jobs:
      forcedinline uint8& getAlpha() noexcept           { return components.a; }
      forcedinline uint8& getRed() noexcept             { return components.r; }
 EOF
-          patch -p0 < juce.patch || true
-      - run: make -C Builds/LinuxMakefile
-      - run: make wifitest || true
+            patch -p0 < juce.patch || true
+            make -C Builds/LinuxMakefile
+            make wifitest || true
 
   build-release-deb:
     name: Build Debian Release Package
@@ -276,12 +287,18 @@ EOF
         id: build
         with:
           arch: armv7
-          distro: buster
+          distro: jessie
           githubToken: ${{ github.token }}
           install: |
-            apt-get update
-            apt-get install -y build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config fakeroot debhelper
+            cat << 'EOF' > /etc/apt/sources.list
+            deb http://archive.debian.org/debian jessie main
+            deb http://archive.debian.org/debian-security jessie/updates main
+            EOF
+            echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+            apt-get update -o Acquire::Check-Valid-Until=false || true
+            apt-get install -y --force-yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config fakeroot debhelper dos2unix libfreetype6-dev i2c-tools
           run: |
+            dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
             cat << 'EOF' > juce.patch
 --- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
 +++ deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
