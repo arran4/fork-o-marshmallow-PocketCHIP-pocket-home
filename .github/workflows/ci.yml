@@ -275,7 +275,7 @@ EOF
 
   build-release-deb:
     name: Build Debian Release Package
-    needs: [route, c-make-build-test]
+    needs: [route, c-make-build-test, prepare-release-tag]
     if: ${{ !failure() && !cancelled() && needs.route.outputs.run_release == 'true' }}
     runs-on: ubuntu-latest
     steps:
@@ -289,6 +289,8 @@ EOF
           arch: armv7
           distro: jessie
           githubToken: ${{ github.token }}
+          env: |
+            TAG: ${{ github.event_name == 'workflow_dispatch' && needs.prepare-release-tag.outputs.release_tag || github.ref_name }}
           install: |
             cat << 'EOF' > /etc/apt/sources.list
             deb http://archive.debian.org/debian jessie main
@@ -319,6 +321,10 @@ EOF
      forcedinline uint8& getRed() noexcept             { return components.r; }
 EOF
             patch -p0 < juce.patch || true
+            if [ -n "$TAG" ]; then
+              VERSION="${TAG#v}"
+              sed -i -E "1s/\([^)]+\)/($VERSION)/" debian/changelog
+            fi
             dpkg-buildpackage -us -uc -b
             mkdir -p out
             cp ../pocket-home_*.deb out/
@@ -347,11 +353,28 @@ EOF
           name: pocket-home-deb
           path: new-deb
 
-      - name: Tag commit for release (workflow_dispatch)
+      - name: Sync version source and tag commit (workflow_dispatch)
         if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-') }}
         run: |
-          git tag -f ${{ needs.prepare-release-tag.outputs.release_tag }}
-          git push -f origin ${{ needs.prepare-release-tag.outputs.release_tag }}
+          set -euo pipefail
+          RELEASE_TAG="${{ needs.prepare-release-tag.outputs.release_tag }}"
+          RELEASE_VERSION="${RELEASE_TAG#v}"
+
+          # Update changelog
+          sed -i -E "1s/\\([^)]+\\)/($RELEASE_VERSION)/" debian/changelog
+
+          # Configure Git
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Commit and push
+          git add debian/changelog
+          git commit -m "chore: bump release version to $RELEASE_VERSION"
+          git push origin "HEAD:${GITHUB_REF#refs/heads/}"
+
+          # Tag and push tag
+          git tag -f "$RELEASE_TAG"
+          git push -f origin "$RELEASE_TAG" || { sleep 2; git push -f origin "$RELEASE_TAG"; }
 
       - name: Publish GitHub Release
         env:
