@@ -271,12 +271,12 @@ jobs:
 EOF
             patch -p0 < juce.patch || true
             make -C Builds/LinuxMakefile
-            make wifitest || true
+            make wifitest
 
   build-release-deb:
     name: Build Debian Release Package
-    needs: [route]
-    if: ${{ needs.route.outputs.run_release == 'true' }}
+    needs: [route, c-make-build-test]
+    if: ${{ !failure() && !cancelled() && needs.route.outputs.run_release == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
