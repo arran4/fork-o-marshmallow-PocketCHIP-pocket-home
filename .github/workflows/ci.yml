@@ -413,25 +413,29 @@ EOF
           sudo apt-get update
           sudo apt-get install -y reprepro
 
-          mkdir -p repo
+          git clone https://github.com/arran4/fork-mdtohtml.git /tmp/fork-mdtohtml
+          go build -C /tmp/fork-mdtohtml -o mdtohtml .
+
+          mkdir -p deploy/archive
           if [ -d "gh-pages/archive" ]; then
-            cp -a gh-pages/archive/. repo/ || true
+            cp -a gh-pages/archive/. deploy/archive/ || true
           fi
 
-          mkdir -p repo/conf
-          cat << REPOCONF > repo/conf/distributions
+          mkdir -p deploy/archive/conf
+          cat << REPOCONF > deploy/archive/conf/distributions
           Codename: jessie
           Components: main
           Architectures: armhf
           SignWith: ${{ steps.import-gpg.outputs.fingerprint }}
           REPOCONF
 
-          reprepro -b repo includedeb jessie new-deb/*.deb
-          gpg --armor --export ${{ steps.import-gpg.outputs.fingerprint }} > repo/public.key
+          reprepro -b deploy/archive includedeb jessie new-deb/*.deb
+          gpg --armor --export ${{ steps.import-gpg.outputs.fingerprint }} > deploy/archive/public.key
+
+          /tmp/fork-mdtohtml/mdtohtml README.md > deploy/index.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./repo
-          destination_dir: archive
+          publish_dir: ./deploy
