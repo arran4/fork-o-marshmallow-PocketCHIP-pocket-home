@@ -325,7 +325,8 @@ EOF
               VERSION="${TAG#v}"
               sed -i -E "1s/\([^)]+\)/($VERSION)/" debian/changelog
             fi
-            dpkg-buildpackage -us -uc -b
+            #dpkg-buildpackage -us -uc -b
+            dpkg-buildpackage -aarmhf -us -uc -b
             mkdir -p out
             cp ../pocket-home_*.deb out/
       - uses: actions/upload-artifact@v4
