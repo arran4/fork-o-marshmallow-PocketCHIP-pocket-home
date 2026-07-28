@@ -105,13 +105,17 @@ jobs:
               ;;
             workflow_dispatch)
               run_code_checks=true
-              if [[ "${{ inputs.mode }}" == release-* ]]; then
+              INPUT_MODE="${{ inputs.mode }}"
+              if [[ -z "$INPUT_MODE" ]]; then
+                INPUT_MODE="${{ github.event.inputs.mode }}"
+              fi
+              if [[ "$INPUT_MODE" == release-* ]]; then
                 run_release=true
               fi
-              if [[ "${{ inputs.mode }}" == "monthly-maintenance" ]]; then
+              if [[ "$INPUT_MODE" == "monthly-maintenance" ]]; then
                 is_monthly=true
               fi
-              if [[ "${{ inputs.mode }}" == "lint-fix" ]]; then
+              if [[ "$INPUT_MODE" == "lint-fix" ]]; then
                 is_nightly=true
               fi
               ;;
@@ -230,54 +234,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-dev network-manager-dev libi2c-dev libssl-dev pkg-config libfreetype6-dev
-          sed -i "s/NetworkManager libnm-glib/libnm/g" Builds/LinuxMakefile/Makefile
-          cat << 'EOF' > juce.patch
---- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-+++ deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-@@ -109,10 +109,10 @@
-     // It might be possible to force GCC to do so, but the GCC manual is very vague about
-     // the #pragma pack arguments, and it seems to just ignore them. So
-     // NB these are here as a workaround because GCC refuses to bind to packed values.
--    forcedinline uint8& getAlpha() noexcept           { return comps [indexA]; }
--    forcedinline uint8& getRed() noexcept             { return comps [indexR]; }
--    forcedinline uint8& getGreen() noexcept           { return comps [indexG]; }
--    forcedinline uint8& getBlue() noexcept            { return comps [indexB]; }
-+    forcedinline uint8& getAlpha() noexcept           { return *const_cast<uint8*>(&comps[indexA]); }
-+    forcedinline uint8& getRed() noexcept             { return *const_cast<uint8*>(&comps[indexR]); }
-+    forcedinline uint8& getGreen() noexcept           { return *const_cast<uint8*>(&comps[indexG]); }
-+    forcedinline uint8& getBlue() noexcept            { return *const_cast<uint8*>(&comps[indexB]); }
-    #else
-     forcedinline uint8& getAlpha() noexcept           { return components.a; }
-     forcedinline uint8& getRed() noexcept             { return components.r; }
-EOF
-          patch -p0 < juce.patch || true
-      - run: make -C Builds/LinuxMakefile
-      - run: make wifitest || true
-
-  build-release-deb:
-    name: Build Debian Release Package
-    needs: [route]
-    if: ${{ needs.route.outputs.run_release == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Build and Package
+      - name: Build and Test in Jessie Container
         uses: uraimo/run-on-arch-action@v2
-        id: build
         with:
           arch: armv7
-          distro: buster
+          distro: jessie
           githubToken: ${{ github.token }}
           install: |
-            apt-get update
-            apt-get install -y build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config fakeroot debhelper
+            cat << 'EOF' > /etc/apt/sources.list
+            deb http://archive.debian.org/debian jessie main
+            deb http://archive.debian.org/debian-security jessie/updates main
+            EOF
+            echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+            apt-get update -o Acquire::Check-Valid-Until=false || true
+            apt-get install -y --force-yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config libfreetype6-dev dos2unix i2c-tools
           run: |
+            dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
             cat << 'EOF' > juce.patch
 --- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
 +++ deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
@@ -298,6 +270,62 @@ EOF
      forcedinline uint8& getRed() noexcept             { return components.r; }
 EOF
             patch -p0 < juce.patch || true
+            make -C Builds/LinuxMakefile
+            make wifitest
+
+  build-release-deb:
+    name: Build Debian Release Package
+    needs: [route, c-make-build-test, prepare-release-tag]
+    if: ${{ !failure() && !cancelled() && needs.route.outputs.run_release == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build and Package
+        uses: uraimo/run-on-arch-action@v2
+        id: build
+        with:
+          arch: armv7
+          distro: jessie
+          githubToken: ${{ github.token }}
+          env: |
+            TAG: ${{ github.event_name == 'workflow_dispatch' && needs.prepare-release-tag.outputs.release_tag || github.ref_name }}
+          install: |
+            cat << 'EOF' > /etc/apt/sources.list
+            deb http://archive.debian.org/debian jessie main
+            deb http://archive.debian.org/debian-security jessie/updates main
+            EOF
+            echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+            apt-get update -o Acquire::Check-Valid-Until=false || true
+            apt-get install -y --force-yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config fakeroot debhelper dos2unix libfreetype6-dev i2c-tools
+          run: |
+            dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+            cat << 'EOF' > juce.patch
+--- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
++++ deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+@@ -109,10 +109,10 @@
+     // It might be possible to force GCC to do so, but the GCC manual is very vague about
+     // the #pragma pack arguments, and it seems to just ignore them. So
+     // NB these are here as a workaround because GCC refuses to bind to packed values.
+-    forcedinline uint8& getAlpha() noexcept           { return comps [indexA]; }
+-    forcedinline uint8& getRed() noexcept             { return comps [indexR]; }
+-    forcedinline uint8& getGreen() noexcept           { return comps [indexG]; }
+-    forcedinline uint8& getBlue() noexcept            { return comps [indexB]; }
++    forcedinline uint8& getAlpha() noexcept           { return *const_cast<uint8*>(&comps[indexA]); }
++    forcedinline uint8& getRed() noexcept             { return *const_cast<uint8*>(&comps[indexR]); }
++    forcedinline uint8& getGreen() noexcept           { return *const_cast<uint8*>(&comps[indexG]); }
++    forcedinline uint8& getBlue() noexcept            { return *const_cast<uint8*>(&comps[indexB]); }
+    #else
+     forcedinline uint8& getAlpha() noexcept           { return components.a; }
+     forcedinline uint8& getRed() noexcept             { return components.r; }
+EOF
+            patch -p0 < juce.patch || true
+            if [ -n "$TAG" ]; then
+              VERSION="${TAG#v}"
+              sed -i -E "1s/\([^)]+\)/($VERSION)/" debian/changelog
+            fi
+            #dpkg-buildpackage -us -uc -b
             dpkg-buildpackage -aarmhf -us -uc -b
             mkdir -p out
             cp ../pocket-home_*.deb out/
@@ -326,11 +354,28 @@ EOF
           name: pocket-home-deb
           path: new-deb
 
-      - name: Tag commit for release (workflow_dispatch)
+      - name: Sync version source and tag commit (workflow_dispatch)
         if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-') }}
         run: |
-          git tag -f ${{ needs.prepare-release-tag.outputs.release_tag }}
-          git push -f origin ${{ needs.prepare-release-tag.outputs.release_tag }}
+          set -euo pipefail
+          RELEASE_TAG="${{ needs.prepare-release-tag.outputs.release_tag }}"
+          RELEASE_VERSION="${RELEASE_TAG#v}"
+
+          # Update changelog
+          sed -i -E "1s/\\([^)]+\\)/($RELEASE_VERSION)/" debian/changelog
+
+          # Configure Git
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Commit and push
+          git add debian/changelog
+          git commit -m "chore: bump release version to $RELEASE_VERSION"
+          git push origin "HEAD:${GITHUB_REF#refs/heads/}"
+
+          # Tag and push tag
+          git tag -f "$RELEASE_TAG"
+          git push -f origin "$RELEASE_TAG" || { sleep 2; git push -f origin "$RELEASE_TAG"; }
 
       - name: Publish GitHub Release
         env:
@@ -347,7 +392,8 @@ EOF
 
           # Use Announcement category if possible, else standard notes
           gh release create "$TAG" new-deb/*.deb --generate-notes $prerelease --discussion-category Announcements || \
-            gh release create "$TAG" new-deb/*.deb --generate-notes $prerelease || true
+            gh release create "$TAG" new-deb/*.deb --generate-notes $prerelease || \
+            gh release upload "$TAG" new-deb/*.deb --clobber || true
 
       - name: Checkout gh-pages
         uses: actions/checkout@v4
@@ -368,25 +414,29 @@ EOF
           sudo apt-get update
           sudo apt-get install -y reprepro
 
-          mkdir -p repo
+          git clone https://github.com/arran4/fork-mdtohtml.git /tmp/fork-mdtohtml
+          go build -C /tmp/fork-mdtohtml -o mdtohtml .
+
+          mkdir -p deploy/archive
           if [ -d "gh-pages/archive" ]; then
-            cp -a gh-pages/archive/. repo/ || true
+            cp -a gh-pages/archive/. deploy/archive/ || true
           fi
 
-          mkdir -p repo/conf
-          cat << REPOCONF > repo/conf/distributions
+          mkdir -p deploy/archive/conf
+          cat << REPOCONF > deploy/archive/conf/distributions
           Codename: jessie
           Components: main
           Architectures: armhf
           SignWith: ${{ steps.import-gpg.outputs.fingerprint }}
           REPOCONF
 
-          reprepro -b repo includedeb jessie new-deb/*.deb
-          gpg --armor --export ${{ steps.import-gpg.outputs.fingerprint }} > repo/public.key
+          reprepro -b deploy/archive includedeb jessie new-deb/*.deb
+          gpg --armor --export ${{ steps.import-gpg.outputs.fingerprint }} > deploy/archive/public.key
+
+          /tmp/fork-mdtohtml/mdtohtml README.md > deploy/index.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./repo
-          destination_dir: archive
+          publish_dir: ./deploy

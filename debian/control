@@ -9,7 +9,7 @@ Standards-Version: 3.9.8
 Homepage: http://opensource.nextthing.co
 
 Package: pocket-home
-Architecture: any
+Architecture: armhf
 Depends: ${shlibs:Depends}, ${misc:Depends}, libnm-glib4, network-manager
 Description: home screen for PocketCHIP
  It can launch programs and change system settings
