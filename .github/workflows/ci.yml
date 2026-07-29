@@ -88,7 +88,7 @@ jobs:
           case "${{ github.event_name }}" in
             push)
               run_code_checks=true
-              if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+              if [[ "${{ github.ref }}" == refs/tags/* ]] || [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
                 run_release=true
               fi
               ;;
@@ -140,7 +140,7 @@ jobs:
   prepare-release-tag:
     name: Prepare release tag
     needs: [route]
-    if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-') }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-')) || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) }}
     runs-on: ubuntu-latest
     outputs:
       release_tag: ${{ steps.tag.outputs.release_tag }}
@@ -159,8 +159,13 @@ jobs:
           set -euo pipefail
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          MODE="${{ inputs.mode }}"
-          OVERRIDE="${{ inputs.release_version_override }}"
+          if [[ "${{ github.event_name }}" == "push" && ("${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master") ]]; then
+            MODE="release-patch"
+            OVERRIDE=""
+          else
+            MODE="${{ inputs.mode }}"
+            OVERRIDE="${{ inputs.release_version_override }}"
+          fi
 
           if [[ -n "$OVERRIDE" ]]; then
             OVERRIDE="${OVERRIDE#v}"
@@ -290,7 +295,7 @@ EOF
           distro: jessie
           githubToken: ${{ github.token }}
           env: |
-            TAG: ${{ github.event_name == 'workflow_dispatch' && needs.prepare-release-tag.outputs.release_tag || github.ref_name }}
+            TAG: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))) && needs.prepare-release-tag.outputs.release_tag || github.ref_name }}
           install: |
             cat << 'EOF' > /etc/apt/sources.list
             deb http://archive.debian.org/debian jessie main
@@ -355,8 +360,8 @@ EOF
           name: pocket-home-deb
           path: new-deb
 
-      - name: Sync version source and tag commit (workflow_dispatch)
-        if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-') }}
+      - name: Sync version source and tag commit
+        if: ${{ (github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-')) || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) }}
         run: |
           set -euo pipefail
           RELEASE_TAG="${{ needs.prepare-release-tag.outputs.release_tag }}"
@@ -381,7 +386,7 @@ EOF
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.event_name == 'workflow_dispatch' && needs.prepare-release-tag.outputs.release_tag || github.ref_name }}
+          TAG: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))) && needs.prepare-release-tag.outputs.release_tag || github.ref_name }}
         run: |
           set -euo pipefail
           prerelease=""
@@ -389,6 +394,8 @@ EOF
             case "${{ inputs.mode }}" in
               release-test|release-rc|release-alpha) prerelease="--prerelease" ;;
             esac
+          elif [[ "${{ github.event_name }}" == "push" && ("${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master") ]]; then
+            prerelease=""
           fi
 
           # Use Announcement category if possible, else standard notes
