@@ -343,6 +343,7 @@ EOF
     permissions:
       contents: write
       discussions: write
+      packages: write
     steps:
       - uses: actions/checkout@v4
         with:
