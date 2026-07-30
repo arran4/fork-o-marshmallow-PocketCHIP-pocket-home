@@ -450,20 +450,3 @@ EOF
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./deploy
-
-  test-temporary-job:
-    name: Temporary Job to Test Base Image
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build and Test in Jessie Container
-        uses: uraimo/run-on-arch-action@v2
-        with:
-          arch: none
-          distro: none
-          base_image: arm32v7/debian:jessie
-          githubToken: ${{ github.token }}
-          install: |
-            echo "Installing..."
-          run: |
-            echo "Hello from arm32v7 container!"
