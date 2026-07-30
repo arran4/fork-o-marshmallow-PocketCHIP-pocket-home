@@ -282,7 +282,7 @@ EOF
   build-release-deb:
     name: Build Debian Release Package
     needs: [route, c-make-build-test, prepare-release-tag]
-    if: ${{ !failure() && !cancelled() && needs.route.outputs.run_release == 'true' }}
+    if: ${{ !failure() && !cancelled() && needs.c-make-build-test.result == 'success' && needs.route.outputs.run_release == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -345,7 +345,7 @@ EOF
   publish-release:
     name: Publish Release and APT Repo
     needs: [route, build-release-deb, prepare-release-tag]
-    if: ${{ !failure() && !cancelled() && needs.route.outputs.run_release == 'true' }}
+    if: ${{ !failure() && !cancelled() && needs.build-release-deb.result == 'success' && needs.route.outputs.run_release == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
