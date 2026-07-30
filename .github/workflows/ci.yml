@@ -242,8 +242,9 @@ jobs:
       - name: Build and Test in Jessie Container
         uses: uraimo/run-on-arch-action@v2
         with:
-          arch: armv7
-          distro: jessie
+          arch: none
+          distro: none
+          base_image: arm32v7/debian:jessie
           githubToken: ${{ github.token }}
           install: |
             cat << 'EOF' > /etc/apt/sources.list
@@ -291,8 +292,9 @@ EOF
         uses: uraimo/run-on-arch-action@v2
         id: build
         with:
-          arch: armv7
-          distro: jessie
+          arch: none
+          distro: none
+          base_image: arm32v7/debian:jessie
           githubToken: ${{ github.token }}
           env: |
             TAG: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))) && needs.prepare-release-tag.outputs.release_tag || github.ref_name }}
