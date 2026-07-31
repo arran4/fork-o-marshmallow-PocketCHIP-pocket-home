@@ -284,10 +284,15 @@ EOF
     needs: [route, c-make-build-test, prepare-release-tag]
     if: ${{ !failure() && !cancelled() && needs.c-make-build-test.result == 'success' && needs.route.outputs.run_release == 'true' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      discussions: write
+      packages: write
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
       - name: Build and Package
         uses: uraimo/run-on-arch-action@v2
         id: build
@@ -342,26 +347,6 @@ EOF
           retention-days: 1
           path: out/pocket-home_*.deb
 
-  publish-release:
-    name: Publish Release and APT Repo
-    needs: [route, build-release-deb, prepare-release-tag]
-    if: ${{ !failure() && !cancelled() && needs.build-release-deb.result == 'success' && needs.route.outputs.run_release == 'true' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      discussions: write
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: pocket-home-deb
-          path: new-deb
-
       - name: Sync version source and tag commit
         if: ${{ (github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-')) || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) }}
         run: |
@@ -401,9 +386,9 @@ EOF
           fi
 
           # Use Announcement category if possible, else standard notes
-          gh release create "$TAG" new-deb/*.deb --generate-notes $prerelease --discussion-category Announcements || \
-            gh release create "$TAG" new-deb/*.deb --generate-notes $prerelease || \
-            gh release upload "$TAG" new-deb/*.deb --clobber || true
+          gh release create "$TAG" out/*.deb --generate-notes $prerelease --discussion-category Announcements || \
+            gh release create "$TAG" out/*.deb --generate-notes $prerelease || \
+            gh release upload "$TAG" out/*.deb --clobber || true
 
       - name: Checkout gh-pages
         uses: actions/checkout@v4
@@ -440,7 +425,7 @@ EOF
           SignWith: ${{ steps.import-gpg.outputs.fingerprint }}
           REPOCONF
 
-          reprepro -b deploy/archive includedeb jessie new-deb/*.deb
+          reprepro -b deploy/archive includedeb jessie out/*.deb
           gpg --armor --export ${{ steps.import-gpg.outputs.fingerprint }} > deploy/archive/public.key
 
           /tmp/fork-mdtohtml/mdtohtml README.md > deploy/index.html
