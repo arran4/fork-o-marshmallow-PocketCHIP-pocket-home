@@ -23,7 +23,15 @@ void OverlaySpinnerTimer::timerCallback() {
 
 OverlaySpinner::OverlaySpinner() : overlaySpinnerTimer(this) {
   //launchSpinnerTimer.launcherComponent = this;
-  Array<String> spinnerImgPaths{"wait0.png","wait1.png","wait2.png","wait3.png","wait4.png","wait5.png","wait6.png","wait7.png"};
+  Array<String> spinnerImgPaths;
+  spinnerImgPaths.add("wait0.png");
+  spinnerImgPaths.add("wait1.png");
+  spinnerImgPaths.add("wait2.png");
+  spinnerImgPaths.add("wait3.png");
+  spinnerImgPaths.add("wait4.png");
+  spinnerImgPaths.add("wait5.png");
+  spinnerImgPaths.add("wait6.png");
+  spinnerImgPaths.add("wait7.png");
   for(auto& path : spinnerImgPaths) {
     auto image = createImageFromFile(assetFile(path));
     spinnerImages.add(image);

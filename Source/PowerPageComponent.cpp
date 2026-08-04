@@ -16,35 +16,35 @@ PowerPageComponent::PowerPageComponent() {
   addAndMakeVisible(mainPage);
   mainPage->toBack();
   ChildProcess child{};
-  
+
   felPage = new PowerFelPageComponent();
-  
+
   //Setting up the lockscreen
   auto lambda = [this](){ this->hideLockscreen(); };
   lockscreen = new LoginPage(lambda);
-  
+
   // create back button
   backButton = createImageButton(
       "Back", createImageFromFile(assetFile("nextIcon.png")));
   backButton->addListener(this);
   backButton->setAlwaysOnTop(true);
   addAndMakeVisible(backButton);
-    
+
   powerOffButton = new TextButton("Power OFF");
   powerOffButton->setButtonText("Shutdown");
   powerOffButton->addListener(this);
   addAndMakeVisible(powerOffButton);
-    
+
   rebootButton = new TextButton("Reboot");
   rebootButton->setButtonText("Reboot");
   rebootButton->addListener(this);
   addAndMakeVisible(rebootButton);
-    
+
    sleepButton = new TextButton("Sleep");
    sleepButton->setButtonText("Sleep");
    sleepButton->addListener(this);
    addAndMakeVisible(sleepButton);
-    
+
     felButton = new TextButton("Fel");
     felButton->setButtonText("Flash Software");
     felButton->addListener(this);
@@ -71,17 +71,17 @@ PowerPageComponent::PowerPageComponent() {
       DBG(buildName);
     }
   }
-  
+
 #if JUCE_MAC
   buildName = "Build: MacOsX Dev Build";
 #endif
-  
+
   buildNameLabel = new Label("Build Name");
   buildNameLabel->setText(buildName, NotificationType::dontSendNotification);
   buildNameLabel->      setFont(16);
   buildNameLabel->setJustificationType(Justification::centred);
   addAndMakeVisible(buildNameLabel);
-  
+
   //Create rev Text
   String rev_string = "Alpha v"+std::to_string(rev_number);
   if(bug_number != 0)
@@ -90,10 +90,10 @@ PowerPageComponent::PowerPageComponent() {
   addAndMakeVisible(rev);
   rev->setAlwaysOnTop(true);
   rev->setFont(Font(20.f));
-  
+
   //Update window
   updateWindow = new AlertWindow("Checking for updates",
-                   "Downloading informations, please wait...", 
+                   "Downloading informations, please wait...",
                    AlertWindow::AlertIconType::NoIcon);
   addAndMakeVisible(updateWindow, 10);
   updateWindow->setAlwaysOnTop(true);
@@ -105,7 +105,7 @@ PowerPageComponent::~PowerPageComponent() {}
 void PowerPageComponent::hideLockscreen(){
     removeChildComponent(lockscreen);
     //Let's go back to the homescreen
-    getMainStack().popPage(PageStackComponent::kTransitionNone);    
+    getMainStack().popPage(PageStackComponent::kTransitionNone);
 }
 
 void PowerPageComponent::paint(Graphics &g) {
@@ -115,13 +115,13 @@ void PowerPageComponent::paint(Graphics &g) {
 }
 
 void PowerPageComponent::resized() {
-  
+
   auto bounds = getLocalBounds();
   overlaySpinner->setBounds(0, 0, bounds.getWidth(), bounds.getHeight());
 
   {
     unsigned int number = 4;
-    
+
     for (int i = 0, j = 0; i < number; ++i) {
       if (i > 0) verticalLayout.setItemLayout(j++, 0, -1, -1);
       verticalLayout.setItemLayout(j++, 48, 48, 48);
@@ -135,17 +135,17 @@ void PowerPageComponent::resized() {
   }
 
   mainPage->setBounds(bounds);
-  
+
   powerOffButton->setBounds(bounds.getWidth()/7, 40, 350, 40);
   sleepButton->setBounds(bounds.getWidth()/7, 90, 350, 40);
   rebootButton->setBounds(bounds.getWidth()/7, 140, 350, 40);
   felButton->setBounds(bounds.getWidth()/7, 190, 350, 40);
   backButton->setBounds(bounds.getWidth()-60, bounds.getY(), 60, bounds.getHeight());
-  
+
   buildNameLabel->setBounds(bounds.getX(), bounds.getY(), bounds.getWidth(), 30);
   buildNameLabel->setBoundsToFit(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(), Justification::centredBottom, true);
   rev->setBounds(bounds.getX(), bounds.getY(), 100, 30);
-    
+
   int width = updateWindow->getWidth();
   int height = updateWindow->getHeight();
   int x = bounds.getWidth()/2-width/2;
@@ -155,7 +155,12 @@ void PowerPageComponent::resized() {
 
 void PowerPageComponent::setSleep() {
     #if JUCE_LINUX
-    StringArray cmd{ "xset","q","|","grep","is O" };
+    StringArray cmd;
+    cmd.add("xset");
+    cmd.add("q");
+    cmd.add("|");
+    cmd.add("grep");
+    cmd.add("is O");
     if(child.start(cmd)) {
         const String result (child.readAllProcessOutput());
         if( result == "Monitor is Off") {

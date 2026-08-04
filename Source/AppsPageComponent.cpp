@@ -216,7 +216,10 @@ void AppsPageComponent::startApp(AppIconButton* appButton) {
 void AppsPageComponent::focusApp(AppIconButton* appButton, const String& windowId) {
   DBG("AppsPageComponent::focusApp - " << appButton->shell);
   String focusShell = "echo 'focus_client_by_window_id("+windowId+")' | awesome-client";
-  StringArray focusCmd{"sh", "-c", focusShell.toRawUTF8()};
+  StringArray focusCmd;
+  focusCmd.add("sh");
+  focusCmd.add("-c");
+  focusCmd.add(focusShell.toRawUTF8());
   ChildProcess focusWindow;
   focusWindow.start(focusCmd);
 };
@@ -232,7 +235,14 @@ void AppsPageComponent::startOrFocusApp(AppIconButton* appButton) {
   if(hasLaunched) {
     const auto shellWords = split(appButton->shell, " ");
     const auto& cmdName = shellWords[0];
-    StringArray findCmd{"xdotool", "search", "--all", "--limit", "1", "--class", cmdName.toRawUTF8()};
+    StringArray findCmd;
+    findCmd.add("xdotool");
+    findCmd.add("search");
+    findCmd.add("--all");
+    findCmd.add("--limit");
+    findCmd.add("1");
+    findCmd.add("--class");
+    findCmd.add(cmdName.toRawUTF8());
     ChildProcess findWindow;
     findWindow.start(findCmd);
     findWindow.waitForProcessToFinish(1000);
@@ -256,7 +266,7 @@ void AppsPageComponent::openAppsLibrary() {
 }
 
 void AppsPageComponent::checkRunningApps() {
-  Array<int> needsRemove{};
+  Array<int> needsRemove;
   
   // check list to mark any needing removal
   for (const auto& cp : runningApps) {
