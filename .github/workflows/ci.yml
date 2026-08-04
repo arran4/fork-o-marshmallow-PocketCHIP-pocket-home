@@ -277,7 +277,7 @@ jobs:
                  forcedinline uint8& getRed() noexcept             { return components.r; }
             EOF
                         patch -p0 < juce.patch || true
-                        export CXXFLAGS="-std=gnu++11"
+            sed -i "s/-std=c++11/-std=gnu++11/g" Builds/LinuxMakefile/Makefile
                         make -C Builds/LinuxMakefile
                         make wifitest
 
@@ -335,7 +335,7 @@ jobs:
                  forcedinline uint8& getRed() noexcept             { return components.r; }
             EOF
             patch -p0 < juce.patch || true
-            export DEB_CXXFLAGS_MAINT_APPEND="-std=gnu++11"
+            sed -i "s/-std=c++11/-std=gnu++11/g" Builds/LinuxMakefile/Makefile
             if [ -n "$TAG" ]; then
               VERSION="${TAG#v}"
               sed -i -E "1s/\([^)]+\)/($VERSION)/" debian/changelog
