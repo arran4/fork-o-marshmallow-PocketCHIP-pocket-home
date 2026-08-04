@@ -102,6 +102,7 @@ jobs:
               ;;
             release)
               run_release=true
+              run_code_checks=true
               ;;
             workflow_dispatch)
               run_code_checks=true
@@ -282,7 +283,7 @@ EOF
   build-release-deb:
     name: Build Debian Release Package
     needs: [route, c-make-build-test, prepare-release-tag]
-    if: ${{ !failure() && !cancelled() && needs.c-make-build-test.result == 'success' && needs.route.outputs.run_release == 'true' }}
+    if: ${{ always() && needs.c-make-build-test.result == 'success' && (needs.prepare-release-tag.result == 'success' || needs.prepare-release-tag.result == 'skipped') && needs.route.outputs.run_release == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
