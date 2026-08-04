@@ -277,8 +277,7 @@ jobs:
                  forcedinline uint8& getRed() noexcept             { return components.r; }
             EOF
                         patch -p0 < juce.patch || true
-            sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS_DISABLED/g" deps/JUCE/modules/juce_core/containers/juce_Array.h
-            sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS_DISABLED/g" deps/JUCE/modules/juce_core/text/juce_StringArray.h
+            sed -i "s/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 0/g" deps/JUCE/modules/juce_core/system/juce_CompilerSupport.h
                         make -C Builds/LinuxMakefile
                         make wifitest
 
@@ -336,8 +335,7 @@ jobs:
                  forcedinline uint8& getRed() noexcept             { return components.r; }
             EOF
             patch -p0 < juce.patch || true
-            sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS_DISABLED/g" deps/JUCE/modules/juce_core/containers/juce_Array.h
-            sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS_DISABLED/g" deps/JUCE/modules/juce_core/text/juce_StringArray.h
+            sed -i "s/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 0/g" deps/JUCE/modules/juce_core/system/juce_CompilerSupport.h
             if [ -n "$TAG" ]; then
               VERSION="${TAG#v}"
               sed -i -E "1s/\([^)]+\)/($VERSION)/" debian/changelog
