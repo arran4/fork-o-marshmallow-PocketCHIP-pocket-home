@@ -335,12 +335,12 @@ jobs:
                  forcedinline uint8& getRed() noexcept             { return components.r; }
             EOF
             patch -p0 < juce.patch || true
+            export DEB_CXXFLAGS_MAINT_APPEND="-std=gnu++11"
             if [ -n "$TAG" ]; then
               VERSION="${TAG#v}"
               sed -i -E "1s/\([^)]+\)/($VERSION)/" debian/changelog
             fi
             #dpkg-buildpackage -us -uc -b
-            export DEB_CXXFLAGS_MAINT_APPEND="-std=gnu++11"
             dpkg-buildpackage -aarmhf -us -uc -b
             mkdir -p out
             cp ../pocket-home_*.deb out/
