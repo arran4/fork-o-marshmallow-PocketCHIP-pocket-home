@@ -238,7 +238,10 @@ SettingsPageComponent::SettingsPageComponent(LauncherComponent* lc) {
   
   #if JUCE_LINUX
     // Get initial volume value
-    StringArray cmd{ "amixer","sget","Power Amplifier" };
+    StringArray cmd;
+    cmd.add("amixer");
+    cmd.add("sget");
+    cmd.add("Power Amplifier");
     if(child.start(cmd)) {
       const String result (child.readAllProcessOutput());
       int resultIndex = result.indexOf("[")+1;
@@ -356,7 +359,11 @@ void SettingsPageComponent::buttonClicked(Button *button) {
 void SettingsPageComponent::setSoundVolume() {
   volume = volumeSlider->slider->getValue();
   #if JUCE_LINUX
-     StringArray cmd{ "amixer","sset","Power Amplifier",(String(volume)+"%").toRawUTF8()};
+     StringArray cmd;
+     cmd.add("amixer");
+     cmd.add("sset");
+     cmd.add("Power Amplifier");
+     cmd.add((String(volume)+"%").toRawUTF8());
      if( child.start(cmd ) ) {
        String result{child.readAllProcessOutput()};
      }
@@ -367,7 +374,10 @@ void SettingsPageComponent::setSoundVolume() {
 void SettingsPageComponent::setScreenBrightness() {
     brightness = 1+(screenBrightnessSlider->slider->getValue()*0.09);
     #if JUCE_LINUX
-      StringArray cmd{ "sh","-c",(String("echo ") + String(brightness) + String(" > /sys/class/backlight/backlight/brightness")).toRawUTF8() };
+      StringArray cmd;
+      cmd.add("sh");
+      cmd.add("-c");
+      cmd.add((String("echo ") + String(brightness) + String(" > /sys/class/backlight/backlight/brightness")).toRawUTF8());
       if( child.start(cmd) ) {
           String result{child.readAllProcessOutput()};
           DBG(result);

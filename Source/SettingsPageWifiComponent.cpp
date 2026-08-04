@@ -6,9 +6,15 @@
 WifiSpinner::WifiSpinner(const String& componentName) :
   ImageComponent(componentName)
 {
-  const Array<String> spinnerImgPaths{
-    "spinner0.png","spinner1.png","spinner2.png","spinner3.png",
-    "spinner4.png","spinner5.png","spinner6.png","spinner7.png"};
+  Array<String> spinnerImgPaths;
+  spinnerImgPaths.add("spinner0.png");
+  spinnerImgPaths.add("spinner1.png");
+  spinnerImgPaths.add("spinner2.png");
+  spinnerImgPaths.add("spinner3.png");
+  spinnerImgPaths.add("spinner4.png");
+  spinnerImgPaths.add("spinner5.png");
+  spinnerImgPaths.add("spinner6.png");
+  spinnerImgPaths.add("spinner7.png");
 
   for(auto& path : spinnerImgPaths) {
     auto image = createImageFromFile(assetFile(path));

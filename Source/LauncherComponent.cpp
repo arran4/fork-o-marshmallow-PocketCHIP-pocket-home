@@ -180,19 +180,32 @@ clock(nullptr), labelip("ip", "")
   addAndMakeVisible(topButtons);
   addAndMakeVisible(botButtons);
   
-  Array<String> wifiImgPaths{"wifiStrength0.png","wifiStrength1.png","wifiStrength2.png","wifiStrength3.png","wifiOff.png"};
+  Array<String> wifiImgPaths;
+  wifiImgPaths.add("wifiStrength0.png");
+  wifiImgPaths.add("wifiStrength1.png");
+  wifiImgPaths.add("wifiStrength2.png");
+  wifiImgPaths.add("wifiStrength3.png");
+  wifiImgPaths.add("wifiOff.png");
   for(auto& path : wifiImgPaths) {
     auto image = createImageFromFile(assetFile(path));
     wifiIconImages.add(image);
   }
   
-  Array<String> batteryImgPaths{"battery_1.png","battery_2.png","battery_3.png","battery_0.png"};
+  Array<String> batteryImgPaths;
+  batteryImgPaths.add("battery_1.png");
+  batteryImgPaths.add("battery_2.png");
+  batteryImgPaths.add("battery_3.png");
+  batteryImgPaths.add("battery_0.png");
   for(auto& path : batteryImgPaths) {
     auto image = createImageFromFile(assetFile(path));
     batteryIconImages.add(image);
   }
     
-  Array<String> batteryImgChargingPaths{"batteryCharging_1.png","batteryCharging_2.png","batteryCharging_3.png","batteryCharging_0.png"};
+  Array<String> batteryImgChargingPaths;
+  batteryImgChargingPaths.add("batteryCharging_1.png");
+  batteryImgChargingPaths.add("batteryCharging_2.png");
+  batteryImgChargingPaths.add("batteryCharging_3.png");
+  batteryImgChargingPaths.add("batteryCharging_0.png");
   for(auto& path : batteryImgChargingPaths) {
     auto image = createImageFromFile(assetFile(path));
     batteryIconChargingImages.add(image);
@@ -247,8 +260,8 @@ clock(nullptr), labelip("ip", "")
         auto buttonsData = *(page["cornerButtons"].getArray());
         
         // FIXME: is there a better way to slice juce Array<var> ?
-        Array<var> topData{};
-        Array<var> botData{};
+  Array<var> topData;
+  Array<var> botData;
         topData.add(buttonsData[0]);
         topData.add(buttonsData[1]);
         botData.add(buttonsData[2]);
