@@ -258,27 +258,27 @@ jobs:
           run: |
             dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
             cat << 'EOF' > juce.patch
---- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-+++ deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-@@ -109,10 +109,10 @@
-     // It might be possible to force GCC to do so, but the GCC manual is very vague about
-     // the #pragma pack arguments, and it seems to just ignore them. So
-     // NB these are here as a workaround because GCC refuses to bind to packed values.
--    forcedinline uint8& getAlpha() noexcept           { return comps [indexA]; }
--    forcedinline uint8& getRed() noexcept             { return comps [indexR]; }
--    forcedinline uint8& getGreen() noexcept           { return comps [indexG]; }
--    forcedinline uint8& getBlue() noexcept            { return comps [indexB]; }
-+    forcedinline uint8& getAlpha() noexcept           { return *const_cast<uint8*>(&comps[indexA]); }
-+    forcedinline uint8& getRed() noexcept             { return *const_cast<uint8*>(&comps[indexR]); }
-+    forcedinline uint8& getGreen() noexcept           { return *const_cast<uint8*>(&comps[indexG]); }
-+    forcedinline uint8& getBlue() noexcept            { return *const_cast<uint8*>(&comps[indexB]); }
-    #else
-     forcedinline uint8& getAlpha() noexcept           { return components.a; }
-     forcedinline uint8& getRed() noexcept             { return components.r; }
-EOF
-            patch -p0 < juce.patch || true
-            make -C Builds/LinuxMakefile
-            make wifitest
+            --- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+            +++ deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+            @@ -109,10 +109,10 @@
+                 // It might be possible to force GCC to do so, but the GCC manual is very vague about
+                 // the #pragma pack arguments, and it seems to just ignore them. So
+                 // NB these are here as a workaround because GCC refuses to bind to packed values.
+            -    forcedinline uint8& getAlpha() noexcept           { return comps [indexA]; }
+            -    forcedinline uint8& getRed() noexcept             { return comps [indexR]; }
+            -    forcedinline uint8& getGreen() noexcept           { return comps [indexG]; }
+            -    forcedinline uint8& getBlue() noexcept            { return comps [indexB]; }
+            +    forcedinline uint8& getAlpha() noexcept           { return *const_cast<uint8*>(&comps[indexA]); }
+            +    forcedinline uint8& getRed() noexcept             { return *const_cast<uint8*>(&comps[indexR]); }
+            +    forcedinline uint8& getGreen() noexcept           { return *const_cast<uint8*>(&comps[indexG]); }
+            +    forcedinline uint8& getBlue() noexcept            { return *const_cast<uint8*>(&comps[indexB]); }
+                #else
+                 forcedinline uint8& getAlpha() noexcept           { return components.a; }
+                 forcedinline uint8& getRed() noexcept             { return components.r; }
+            EOF
+                        patch -p0 < juce.patch || true
+                        make -C Builds/LinuxMakefile
+                        make wifitest
 
   build-release-deb:
     name: Build Debian Release Package
@@ -315,24 +315,24 @@ EOF
           run: |
             dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
             cat << 'EOF' > juce.patch
---- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-+++ deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-@@ -109,10 +109,10 @@
-     // It might be possible to force GCC to do so, but the GCC manual is very vague about
-     // the #pragma pack arguments, and it seems to just ignore them. So
-     // NB these are here as a workaround because GCC refuses to bind to packed values.
--    forcedinline uint8& getAlpha() noexcept           { return comps [indexA]; }
--    forcedinline uint8& getRed() noexcept             { return comps [indexR]; }
--    forcedinline uint8& getGreen() noexcept           { return comps [indexG]; }
--    forcedinline uint8& getBlue() noexcept            { return comps [indexB]; }
-+    forcedinline uint8& getAlpha() noexcept           { return *const_cast<uint8*>(&comps[indexA]); }
-+    forcedinline uint8& getRed() noexcept             { return *const_cast<uint8*>(&comps[indexR]); }
-+    forcedinline uint8& getGreen() noexcept           { return *const_cast<uint8*>(&comps[indexG]); }
-+    forcedinline uint8& getBlue() noexcept            { return *const_cast<uint8*>(&comps[indexB]); }
-    #else
-     forcedinline uint8& getAlpha() noexcept           { return components.a; }
-     forcedinline uint8& getRed() noexcept             { return components.r; }
-EOF
+            --- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+            +++ deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+            @@ -109,10 +109,10 @@
+                 // It might be possible to force GCC to do so, but the GCC manual is very vague about
+                 // the #pragma pack arguments, and it seems to just ignore them. So
+                 // NB these are here as a workaround because GCC refuses to bind to packed values.
+            -    forcedinline uint8& getAlpha() noexcept           { return comps [indexA]; }
+            -    forcedinline uint8& getRed() noexcept             { return comps [indexR]; }
+            -    forcedinline uint8& getGreen() noexcept           { return comps [indexG]; }
+            -    forcedinline uint8& getBlue() noexcept            { return comps [indexB]; }
+            +    forcedinline uint8& getAlpha() noexcept           { return *const_cast<uint8*>(&comps[indexA]); }
+            +    forcedinline uint8& getRed() noexcept             { return *const_cast<uint8*>(&comps[indexR]); }
+            +    forcedinline uint8& getGreen() noexcept           { return *const_cast<uint8*>(&comps[indexG]); }
+            +    forcedinline uint8& getBlue() noexcept            { return *const_cast<uint8*>(&comps[indexB]); }
+                #else
+                 forcedinline uint8& getAlpha() noexcept           { return components.a; }
+                 forcedinline uint8& getRed() noexcept             { return components.r; }
+            EOF
             patch -p0 < juce.patch || true
             if [ -n "$TAG" ]; then
               VERSION="${TAG#v}"
