@@ -275,11 +275,12 @@ jobs:
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/containers/juce_Array.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.cpp
-            sed -i "s/-std=c++11/-std=gnu++11 -Wno-narrowing -Wno-address-of-packed-member/g" Builds/LinuxMakefile/Makefile
+            sed -i "s/-std=c++11/-std=gnu++11 -Wno-narrowing/g" Builds/LinuxMakefile/Makefile
 
-            sed -i "s/-std=c++11/-std=gnu++11 -Wno-narrowing -Wno-address-of-packed-member/g" Builds/LinuxMakefile/UnitTests.mk
+            sed -i "s/-std=c++11/-std=gnu++11 -Wno-narrowing/g" Builds/LinuxMakefile/UnitTests.mk
             dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h || true
             sed -i 's/JUCE_PACKED//g' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+            sed -i 's/Colour((uint8)254, 255, 255, (uint8)201)/Colour(0xc9feffff)/g' Source/OverlaySpinner.cpp
             dos2unix deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h || true
             sed -i 's/getLookAndFeel().drawLasso (g, \*this);/g.fillAll (findColour (lassoFillColourId)); g.setColour (findColour (lassoOutlineColourId)); g.drawRect (getLocalBounds(), 1);/g' deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h
             make -C Builds/LinuxMakefile
