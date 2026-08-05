@@ -231,64 +231,10 @@ jobs:
           IFS='.' read -r maj min pat <<< "$clean_tag"
           echo "next_version=${maj:-0}.${min:-0}.$(( ${pat:-0} + 1 ))-SNAPSHOT" >> "$GITHUB_OUTPUT"
 
-  c-make-build-test:
-    name: Classic C Makefile build
-    needs: [route]
-    if: ${{ needs.route.outputs.run_code_checks == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Build and Test in Jessie Container
-        uses: uraimo/run-on-arch-action@v2
-        with:
-          arch: none
-          distro: none
-          base_image: arm32v7/debian:jessie
-          githubToken: ${{ github.token }}
-          install: |
-            cat << 'EOF' > /etc/apt/sources.list
-            deb http://archive.debian.org/debian jessie main
-            deb http://archive.debian.org/debian-security jessie/updates main
-            EOF
-            echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
-            apt-get update -o Acquire::Check-Valid-Until=false || true
-            apt-get install -y --force-yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config libfreetype6-dev dos2unix i2c-tools
-          run: |
-            dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-            cat << 'EOF' > juce.patch
-            --- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-            +++ deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-            @@ -109,10 +109,10 @@
-                 // It might be possible to force GCC to do so, but the GCC manual is very vague about
-                 // the #pragma pack arguments, and it seems to just ignore them. So
-                 // NB these are here as a workaround because GCC refuses to bind to packed values.
-            -    forcedinline uint8& getAlpha() noexcept           { return comps [indexA]; }
-            -    forcedinline uint8& getRed() noexcept             { return comps [indexR]; }
-            -    forcedinline uint8& getGreen() noexcept           { return comps [indexG]; }
-            -    forcedinline uint8& getBlue() noexcept            { return comps [indexB]; }
-            +    forcedinline uint8& getAlpha() noexcept           { return *const_cast<uint8*>(&comps[indexA]); }
-            +    forcedinline uint8& getRed() noexcept             { return *const_cast<uint8*>(&comps[indexR]); }
-            +    forcedinline uint8& getGreen() noexcept           { return *const_cast<uint8*>(&comps[indexG]); }
-            +    forcedinline uint8& getBlue() noexcept            { return *const_cast<uint8*>(&comps[indexB]); }
-                #else
-                 forcedinline uint8& getAlpha() noexcept           { return components.a; }
-                 forcedinline uint8& getRed() noexcept             { return components.r; }
-            EOF
-                        patch -p0 < juce.patch || true
-            sed -i "s/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 0/g" deps/JUCE/modules/juce_core/system/juce_CompilerSupport.h
-            sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/containers/juce_Array.h
-            sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.h
-            sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.cpp
-            sed -i "s/-std=c++11/-std=gnu++14/g" Builds/LinuxMakefile/Makefile
-                        make -C Builds/LinuxMakefile
-                        make wifitest
-
   build-release-deb:
     name: Build Debian Release Package
-    needs: [route, c-make-build-test, prepare-release-tag]
-    if: ${{ always() && needs.c-make-build-test.result == 'success' && (needs.prepare-release-tag.result == 'success' || needs.prepare-release-tag.result == 'skipped') && needs.route.outputs.run_release == 'true' }}
+    needs: [route, prepare-release-tag]
+    if: ${{ always() && (needs.prepare-release-tag.result == 'success' || needs.prepare-release-tag.result == 'skipped') && (needs.route.outputs.run_code_checks == 'true' || needs.route.outputs.run_release == 'true') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -308,6 +254,7 @@ jobs:
           base_image: arm32v7/debian:jessie
           githubToken: ${{ github.token }}
           env: |
+            ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true
             TAG: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))) && needs.prepare-release-tag.outputs.release_tag || github.ref_name }}
           install: |
             cat << 'EOF' > /etc/apt/sources.list
@@ -319,31 +266,23 @@ jobs:
             apt-get install -y --force-yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config fakeroot debhelper dos2unix libfreetype6-dev i2c-tools
           run: |
             dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-            cat << 'EOF' > juce.patch
-            --- deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-            +++ deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-            @@ -109,10 +109,10 @@
-                 // It might be possible to force GCC to do so, but the GCC manual is very vague about
-                 // the #pragma pack arguments, and it seems to just ignore them. So
-                 // NB these are here as a workaround because GCC refuses to bind to packed values.
-            -    forcedinline uint8& getAlpha() noexcept           { return comps [indexA]; }
-            -    forcedinline uint8& getRed() noexcept             { return comps [indexR]; }
-            -    forcedinline uint8& getGreen() noexcept           { return comps [indexG]; }
-            -    forcedinline uint8& getBlue() noexcept            { return comps [indexB]; }
-            +    forcedinline uint8& getAlpha() noexcept           { return *const_cast<uint8*>(&comps[indexA]); }
-            +    forcedinline uint8& getRed() noexcept             { return *const_cast<uint8*>(&comps[indexR]); }
-            +    forcedinline uint8& getGreen() noexcept           { return *const_cast<uint8*>(&comps[indexG]); }
-            +    forcedinline uint8& getBlue() noexcept            { return *const_cast<uint8*>(&comps[indexB]); }
-                #else
-                 forcedinline uint8& getAlpha() noexcept           { return components.a; }
-                 forcedinline uint8& getRed() noexcept             { return components.r; }
-            EOF
-            patch -p0 < juce.patch || true
             sed -i "s/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 0/g" deps/JUCE/modules/juce_core/system/juce_CompilerSupport.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/containers/juce_Array.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.cpp
-            sed -i "s/-std=c++11/-std=gnu++14/g" Builds/LinuxMakefile/Makefile
+            sed -i "s/-std=c++11/-std=gnu++11 -Wno-narrowing -Wno-address-of-packed-member/g" Builds/LinuxMakefile/Makefile
+
+            sed -i "s/-std=c++11/-std=gnu++11 -Wno-narrowing -Wno-address-of-packed-member/g" Builds/LinuxMakefile/UnitTests.mk
+            dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h || true
+            sed -i 's/forcedinline uint8& getAlpha() noexcept           { return comps \[indexA\]; }/forcedinline uint8\& getAlpha() noexcept           { return \*const_cast<uint8*>(\&comps[indexA]); }/g' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+            sed -i 's/forcedinline uint8& getRed() noexcept             { return comps \[indexR\]; }/forcedinline uint8\& getRed() noexcept             { return \*const_cast<uint8*>(\&comps[indexR]); }/g' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+            sed -i 's/forcedinline uint8& getGreen() noexcept           { return comps \[indexG\]; }/forcedinline uint8\& getGreen() noexcept           { return \*const_cast<uint8*>(\&comps[indexG]); }/g' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+            sed -i 's/forcedinline uint8& getBlue() noexcept            { return comps \[indexB\]; }/forcedinline uint8\& getBlue() noexcept            { return \*const_cast<uint8*>(\&comps[indexB]); }/g' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
+            dos2unix deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h || true
+            sed -i 's/getLookAndFeel().drawLasso (g, \*this);/g.fillAll (findColour (lassoFillColourId)); g.setColour (findColour (lassoOutlineColourId)); g.drawRect (getLocalBounds(), 1);/g' deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h
+            make -C Builds/LinuxMakefile
+            make wifitest
+            if [ "${{ needs.route.outputs.run_release }}" == "true" ]; then
             if [ -n "$TAG" ]; then
               VERSION="${TAG#v}"
               sed -i -E "1s/\([^)]+\)/($VERSION)/" debian/changelog
@@ -352,7 +291,9 @@ jobs:
             dpkg-buildpackage -aarmhf -us -uc -b
             mkdir -p out
             cp ../pocket-home_*.deb out/
+            fi
       - uses: actions/upload-artifact@v4
+        if: ${{ needs.route.outputs.run_release == 'true' }}
         with:
           name: pocket-home-deb
           retention-days: 1
