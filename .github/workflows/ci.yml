@@ -281,6 +281,7 @@ jobs:
             dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h || true
             sed -i 's/JUCE_PACKED//g' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
             sed -i 's/Colour((uint8)254, 255, 255, (uint8)201)/Colour(0xc9feffff)/g' Source/OverlaySpinner.cpp
+            sed -i 's/for(auto& path : spinnerImgPaths) {/for (int i = 0; i < spinnerImgPaths.size(); ++i) { String path = spinnerImgPaths[i];/g' Source/OverlaySpinner.cpp
             dos2unix deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h || true
             sed -i 's/getLookAndFeel().drawLasso (g, \*this);/g.fillAll (findColour (lassoFillColourId)); g.setColour (findColour (lassoOutlineColourId)); g.drawRect (getLocalBounds(), 1);/g' deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h
             make -C Builds/LinuxMakefile
