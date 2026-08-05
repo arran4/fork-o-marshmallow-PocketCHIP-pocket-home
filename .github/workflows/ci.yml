@@ -72,6 +72,8 @@ jobs:
       run_release: ${{ steps.route.outputs.run_release }}
       is_monthly: ${{ steps.route.outputs.is_monthly }}
       is_nightly: ${{ steps.route.outputs.is_nightly }}
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     steps:
       - id: route
         shell: bash
@@ -146,6 +148,8 @@ jobs:
     outputs:
       release_tag: ${{ steps.tag.outputs.release_tag }}
       next_version: ${{ steps.tag.outputs.next_version }}
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -240,6 +244,8 @@ jobs:
       contents: write
       discussions: write
       packages: write
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -254,7 +260,6 @@ jobs:
           base_image: arm32v7/debian:jessie
           githubToken: ${{ github.token }}
           env: |
-            ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true
             TAG: ${{ (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'))) && needs.prepare-release-tag.outputs.release_tag || github.ref_name }}
           install: |
             cat << 'EOF' > /etc/apt/sources.list
