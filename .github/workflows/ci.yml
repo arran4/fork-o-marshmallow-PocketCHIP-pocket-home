@@ -171,8 +171,8 @@ jobs:
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/containers/juce_Array.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.cpp
-            make -C Builds/LinuxMakefile
-            make wifitest
+            make CONFIG=Release
+            make wifitest CONFIG=Release
 
   prepare-release-tag:
     name: Prepare release tag
@@ -306,8 +306,8 @@ jobs:
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/containers/juce_Array.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.cpp
-            make -C Builds/LinuxMakefile
-            make wifitest
+            make CONFIG=Release
+            make wifitest CONFIG=Release
             if [ -n "$TAG" ]; then
               VERSION="${TAG#v}"
               sed -i -E "1s/\([^)]+\)/($VERSION)/" debian/changelog
