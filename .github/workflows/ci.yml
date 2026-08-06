@@ -163,8 +163,9 @@ jobs:
             apt-get update -o Acquire::Check-Valid-Until=false || true
             apt-get install -y --force-yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config dos2unix libfreetype6-dev i2c-tools patch
           run: |
-            sed -i 's/\r$//' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h || true
-            patch -p1 -d deps/JUCE < patches/juce_arm_gcc.patch || true
+            set -euo pipefail
+            dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h || true
+            git apply --directory=deps/JUCE patches/juce_arm_gcc.patch || git apply --ignore-space-change --ignore-whitespace --directory=deps/JUCE patches/juce_arm_gcc.patch || patch -p1 -d deps/JUCE < patches/juce_arm_gcc.patch
             sed -i "s/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 0/g" deps/JUCE/modules/juce_core/system/juce_CompilerSupport.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/containers/juce_Array.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.h
@@ -296,8 +297,9 @@ jobs:
             apt-get update -o Acquire::Check-Valid-Until=false || true
             apt-get install -y --force-yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config fakeroot debhelper dos2unix libfreetype6-dev i2c-tools patch
           run: |
-            sed -i 's/\r$//' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h || true
-            patch -p1 -d deps/JUCE < patches/juce_arm_gcc.patch || true
+            set -euo pipefail
+            dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h || true
+            git apply --directory=deps/JUCE patches/juce_arm_gcc.patch || git apply --ignore-space-change --ignore-whitespace --directory=deps/JUCE patches/juce_arm_gcc.patch || patch -p1 -d deps/JUCE < patches/juce_arm_gcc.patch
             sed -i "s/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 0/g" deps/JUCE/modules/juce_core/system/juce_CompilerSupport.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/containers/juce_Array.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.h
