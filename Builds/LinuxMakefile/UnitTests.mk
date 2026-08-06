@@ -1,34 +1,34 @@
 include Makefile
 
 WifiTest_TARGET := wifitest
-WifiTest_BLDCMD = $(CXX) -o $(OUTDIR)/$(WifiTest_TARGET) $(WifiTest_OBJECTS) $(LDFLAGS) $(RESOURCES) $(TARGET_ARCH)
-WifiTest_CLEANCMD = rm -rf $(OUTDIR)/$(WifiTest_TARGET)
+WifiTest_BLDCMD = $(CXX) -o $(JUCE_OUTDIR)/$(WifiTest_TARGET) $(WifiTest_OBJECTS) $(JUCE_LDFLAGS) $(RESOURCES) $(TARGET_ARCH)
+WifiTest_CLEANCMD = rm -f $(JUCE_OUTDIR)/$(WifiTest_TARGET)
 
 WifiTest_OBJECTS := \
-  $(OBJDIR)/WifiStatusNM_92fce0ef.o \
-  $(OBJDIR)/WifiStatusJson_715858f8.o \
-  $(OBJDIR)/WifiStatus_30949170.o \
-  $(OBJDIR)/Utils_e4b11b92.o \
-  $(OBJDIR)/juce_core_e13be5a9.o \
-  $(OBJDIR)/juce_data_structures_b87144a5.o \
-  $(OBJDIR)/juce_events_8da1559d.o \
-  $(OBJDIR)/juce_graphics_5b381e81.o \
-  $(OBJDIR)/juce_gui_basics_aa965d7d.o \
-  $(OBJDIR)/WifiTest_1459807182.o \
+  $(JUCE_OBJDIR)/WifiStatusNM_92fce0ef.o \
+  $(JUCE_OBJDIR)/WifiStatusJson_715858f8.o \
+  $(JUCE_OBJDIR)/WifiStatus_30949170.o \
+  $(JUCE_OBJDIR)/Utils_e4b11b92.o \
+  $(JUCE_OBJDIR)/juce_core_75b14332.o \
+  $(JUCE_OBJDIR)/juce_data_structures_72d3da2c.o \
+  $(JUCE_OBJDIR)/juce_events_d2be882c.o \
+  $(JUCE_OBJDIR)/juce_graphics_9c18891e.o \
+  $(JUCE_OBJDIR)/juce_gui_basics_8a6da59c.o \
+  $(JUCE_OBJDIR)/WifiTest_1459807182.o \
 
-$(OUTDIR)/$(WifiTest_TARGET): $(WifiTest_OBJECTS) $(RESOURCES)
+$(JUCE_OUTDIR)/$(WifiTest_TARGET): $(WifiTest_OBJECTS) $(RESOURCES)
 	@echo Linking wifitest
-	-@mkdir -p $(BINDIR)
-	-@mkdir -p $(LIBDIR)
-	-@mkdir -p $(OUTDIR)
+	-@mkdir -p $(JUCE_BINDIR)
+	-@mkdir -p $(JUCE_LIBDIR)
+	-@mkdir -p $(JUCE_OUTDIR)
 	@$(WifiTest_BLDCMD)
 
-$(OUTDIR)/$(WifiTest_TARGET)-clean:
+$(JUCE_OUTDIR)/$(WifiTest_TARGET)-clean:
 	@echo Cleaning wifitest
-	@$(WiFiTest_CLEANCMD)
+	@$(WifiTest_CLEANCMD)
 	@$(CLEANCMD)
 
-$(OBJDIR)/WifiTest_1459807182.o: ../../Source/WifiTest.cpp
-	-@mkdir -p $(OBJDIR)
+$(JUCE_OBJDIR)/WifiTest_1459807182.o: ../../Source/WifiTest.cpp
+	-@mkdir -p $(JUCE_OBJDIR)
 	@echo "Compiling WifiTest.cpp"
-	@$(CXX) $(CXXFLAGS) -o "$@" -c "$<"
+	@$(CXX) $(JUCE_CXXFLAGS) -o "$@" -c "$<"
