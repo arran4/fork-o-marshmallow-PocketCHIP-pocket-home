@@ -11,13 +11,15 @@
 
 #if JUCE_LINUX
 
-#include <linux/i2c.h>
 #include <linux/i2c-dev.h>
+#ifndef I2C_SMBUS_BLOCK_MAX
+ #include <linux/i2c.h>
+#endif
 
 // Jessie does not ship i2c/smbus.h, so use the stable kernel ioctl ABI
 // directly instead of depending on the userspace i2c-tools helper header.
-static int i2c_smbus_access(int file, char readWrite, uint8_t command,
-                            int size, union i2c_smbus_data* data) {
+static int pocket_i2c_smbus_access(int file, char readWrite, uint8_t command,
+                                   int size, union i2c_smbus_data* data) {
     struct i2c_smbus_ioctl_data args;
     args.read_write = readWrite;
     args.command = command;
@@ -26,17 +28,18 @@ static int i2c_smbus_access(int file, char readWrite, uint8_t command,
     return ioctl(file, I2C_SMBUS, &args);
 }
 
-static int i2c_smbus_write_byte_data(int file, uint8_t command, uint8_t value) {
+static int pocket_i2c_smbus_write_byte_data(int file, uint8_t command,
+                                            uint8_t value) {
     union i2c_smbus_data data;
     data.byte = value;
-    return i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
-                            I2C_SMBUS_BYTE_DATA, &data);
+    return pocket_i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
+                                   I2C_SMBUS_BYTE_DATA, &data);
 }
 
-static int i2c_smbus_read_byte_data(int file, uint8_t command) {
+static int pocket_i2c_smbus_read_byte_data(int file, uint8_t command) {
     union i2c_smbus_data data;
-    if (i2c_smbus_access(file, I2C_SMBUS_READ, command,
-                         I2C_SMBUS_BYTE_DATA, &data) < 0)
+    if (pocket_i2c_smbus_access(file, I2C_SMBUS_READ, command,
+                                I2C_SMBUS_BYTE_DATA, &data) < 0)
         return -1;
 
     return data.byte & 0xff;
@@ -59,7 +62,7 @@ int i2c_dev_open( const char* i2cdev, uint8_t address ) {
 }
 
 uint8_t i2c_write_byte(int file, uint8_t reg, uint8_t byte) {
-    int res = i2c_smbus_write_byte_data(file, reg, byte);
+    int res = pocket_i2c_smbus_write_byte_data(file, reg, byte);
     
     if( res < 0 )
         printf("Error: %s\n", strerror( errno ) );
@@ -68,7 +71,7 @@ uint8_t i2c_write_byte(int file, uint8_t reg, uint8_t byte) {
 }
 
 uint8_t i2c_read_byte(int file, uint8_t reg) {
-    int data = i2c_smbus_read_byte_data(file, reg);
+    int data = pocket_i2c_smbus_read_byte_data(file, reg);
     if (data < 0)
         printf("Error: %s\n", strerror( errno ) );
     return static_cast<uint8_t>(data);
