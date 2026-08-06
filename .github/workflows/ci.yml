@@ -286,7 +286,6 @@ jobs:
             sed -i "s/-std=c++11/-std=gnu++14 -v -time -save-temps/g" Builds/LinuxMakefile/Makefile
 
             sed -i "s/-std=c++11/-std=gnu++14 -v -time -save-temps/g" Builds/LinuxMakefile/UnitTests.mk
-            sed -i '/#include <i2c\/smbus\.h>/d' Source/PowerPageFelComponent.cpp
             dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h || true
             sed -i '/forcedinline uint8& getAlpha() noexcept/d' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
             sed -i '/forcedinline uint8& getRed() noexcept/d' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
