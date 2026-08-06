@@ -45,8 +45,8 @@ on:
         default: true
         type: boolean
   schedule:
-    - cron: '17 3 1 * *'
-    - cron: '41 2 * * *'
+    - cron: '0 19 1 * *'
+    - cron: '0 19 * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
@@ -122,10 +122,10 @@ jobs:
               ;;
             schedule)
               run_code_checks=true
-              if [[ "${{ github.event.schedule }}" == "17 3 1 * *" ]]; then
+              if [[ "${{ github.event.schedule }}" == "0 19 1 * *" ]]; then
                 is_monthly=true
               fi
-              if [[ "${{ github.event.schedule }}" == "41 2 * * *" ]]; then
+              if [[ "${{ github.event.schedule }}" == "0 19 * * *" ]]; then
                 is_nightly=true
               fi
               ;;
