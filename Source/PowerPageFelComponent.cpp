@@ -12,7 +12,13 @@
 #if JUCE_LINUX
 
 #include <linux/i2c-dev.h>
-#include <i2c/smbus.h>
+#if defined(__has_include)
+  #if __has_include(<i2c/smbus.h>)
+    #include <i2c/smbus.h>
+  #endif
+#else
+  #include <i2c/smbus.h>
+#endif
 
 int i2c_dev_open( const char* i2cdev, uint8_t address ) {
     int file;
