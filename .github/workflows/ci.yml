@@ -1,4 +1,4 @@
-# Agent rules for generation:
+# Agent rules for generation (trigger build check for PR #18):
 # https://arran4.github.io/blog/post/2026/006-github-ci-and-deploy/
 # Built using this post as a reference/guide.
 name: CI/CD
