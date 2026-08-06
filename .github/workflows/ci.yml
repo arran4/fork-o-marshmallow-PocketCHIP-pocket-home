@@ -72,10 +72,6 @@ jobs:
       run_release: ${{ steps.route.outputs.run_release }}
       is_monthly: ${{ steps.route.outputs.is_monthly }}
       is_nightly: ${{ steps.route.outputs.is_nightly }}
-    env:
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-      ACTIONS_STEP_DEBUG: true
-      ACTIONS_RUNNER_DEBUG: true
     steps:
       - id: route
         shell: bash
@@ -142,6 +138,37 @@ jobs:
           echo "is_monthly=$is_monthly" >> "$GITHUB_OUTPUT"
           echo "is_nightly=$is_nightly" >> "$GITHUB_OUTPUT"
 
+  c-make-build-test:
+    name: Build & Test (C/C++ Make)
+    needs: [route]
+    if: ${{ always() && (needs.route.outputs.run_code_checks == 'true' || needs.route.outputs.run_release == 'true') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config dos2unix libfreetype6-dev i2c-tools patch
+      - name: Apply JUCE & Build Patches
+        run: |
+          sed -i 's/\r$//' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h || true
+          patch -p1 -d deps/JUCE < patches/juce_arm_gcc.patch || true
+          sed -i "s/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 0/g" deps/JUCE/modules/juce_core/system/juce_CompilerSupport.h
+          sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/containers/juce_Array.h
+          sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.h
+          sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.cpp
+          sed -i "s/-std=c++11/-std=gnu++14/g" Builds/LinuxMakefile/Makefile
+          sed -i "s/-std=c++11/-std=gnu++14/g" Builds/LinuxMakefile/UnitTests.mk
+      - name: Build
+        run: |
+          make -C Builds/LinuxMakefile
+      - name: Test
+        run: |
+          make wifitest
+
   prepare-release-tag:
     name: Prepare release tag
     needs: [route]
@@ -150,10 +177,6 @@ jobs:
     outputs:
       release_tag: ${{ steps.tag.outputs.release_tag }}
       next_version: ${{ steps.tag.outputs.next_version }}
-    env:
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-      ACTIONS_STEP_DEBUG: true
-      ACTIONS_RUNNER_DEBUG: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -241,17 +264,13 @@ jobs:
 
   build-release-deb:
     name: Build Debian Release Package
-    needs: [route, prepare-release-tag]
-    if: ${{ always() && (needs.prepare-release-tag.result == 'success' || needs.prepare-release-tag.result == 'skipped') && (needs.route.outputs.run_code_checks == 'true' || needs.route.outputs.run_release == 'true') }}
+    needs: [route, c-make-build-test, prepare-release-tag]
+    if: ${{ always() && needs.c-make-build-test.result == 'success' && (needs.prepare-release-tag.result == 'success' || needs.prepare-release-tag.result == 'skipped') && needs.route.outputs.run_release == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
       discussions: write
       packages: write
-    env:
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-      ACTIONS_STEP_DEBUG: true
-      ACTIONS_RUNNER_DEBUG: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -274,39 +293,26 @@ jobs:
             EOF
             echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
             apt-get update -o Acquire::Check-Valid-Until=false || true
-            apt-get install -y --force-yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config fakeroot debhelper dos2unix libfreetype6-dev i2c-tools
+            apt-get install -y --force-yes build-essential git libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxft-dev libxinerama-dev libnm-glib-dev network-manager-dev libi2c-dev libssl-dev pkg-config fakeroot debhelper dos2unix libfreetype6-dev i2c-tools patch
           run: |
-            set -x
-            export MALLOC_CHECK_=0
-            dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-            sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 0/g" deps/JUCE/modules/juce_core/system/juce_CompilerSupport.h
+            sed -i 's/\r$//' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h || true
+            patch -p1 -d deps/JUCE < patches/juce_arm_gcc.patch || true
+            sed -i "s/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1/#define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 0/g" deps/JUCE/modules/juce_core/system/juce_CompilerSupport.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/containers/juce_Array.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.h
             sed -i "s/JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS/0/g" deps/JUCE/modules/juce_core/text/juce_StringArray.cpp
-            sed -i "s/-std=c++11/-std=gnu++14 -v -time -save-temps/g" Builds/LinuxMakefile/Makefile
-
-            sed -i "s/-std=c++11/-std=gnu++14 -v -time -save-temps/g" Builds/LinuxMakefile/UnitTests.mk
-            dos2unix deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h || true
-            sed -i '/forcedinline uint8& getAlpha() noexcept/d' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-            sed -i '/forcedinline uint8& getRed() noexcept/d' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-            sed -i '/forcedinline uint8& getGreen() noexcept/d' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-            sed -i '/forcedinline uint8& getBlue() noexcept/d' deps/JUCE/modules/juce_graphics/colour/juce_PixelFormats.h
-            dos2unix deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h || true
-            sed -i 's/getLookAndFeel().drawLasso (g, \*this);/g.fillAll (findColour (lassoFillColourId)); g.setColour (findColour (lassoOutlineColourId)); g.drawRect (getLocalBounds(), 1);/g' deps/JUCE/modules/juce_gui_basics/mouse/juce_LassoComponent.h
-            make -C Builds/LinuxMakefile V=1
-            make wifitest V=1
-            if [ "${{ needs.route.outputs.run_release }}" == "true" ]; then
+            sed -i "s/-std=c++11/-std=gnu++14/g" Builds/LinuxMakefile/Makefile
+            sed -i "s/-std=c++11/-std=gnu++14/g" Builds/LinuxMakefile/UnitTests.mk
+            make -C Builds/LinuxMakefile
+            make wifitest
             if [ -n "$TAG" ]; then
               VERSION="${TAG#v}"
               sed -i -E "1s/\([^)]+\)/($VERSION)/" debian/changelog
             fi
-            #dpkg-buildpackage -us -uc -b
             dpkg-buildpackage -aarmhf -us -uc -b
             mkdir -p out
             cp ../pocket-home_*.deb out/
-            fi
       - uses: actions/upload-artifact@v4
-        if: ${{ needs.route.outputs.run_release == 'true' }}
         with:
           name: pocket-home-deb
           retention-days: 1
