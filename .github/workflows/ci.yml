@@ -151,7 +151,7 @@ jobs:
         uses: uraimo/run-on-arch-action@v2
         id: build
         with:
-          arch: none
+          arch: armv7
           distro: none
           base_image: arm32v7/debian:jessie
           install: |
