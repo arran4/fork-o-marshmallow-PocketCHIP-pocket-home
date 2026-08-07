@@ -1,0 +1,73 @@
+[0 170 14 21 21 47]
+Celti
+https://github.com/Celti
+Big thanks to <a href="https://github.com/Celti">Celti</a> who made this repo updated to new JUCE version and easier to compile and @sgentle who made the install by apt repository !
+0 {2 PocketCHIP Launcher (Marshmallow Edition) 0 false}
+1 {0   0 false}
+2 {2 How to install 0 false}
+3 {1   0 false}
+4 {3 From repository  0 false}
+5 {1   0 false}
+6 {1 ```bash 0 false}
+7 {2 1. Add https support to apt 0 false}
+8 {1 sudo apt-get install apt-transport-https 0 false}
+9 {0   0 false}
+10 {2 2. Add a source to sources.list 0 false}
+11 {1 echo "deb https://arran4.github.io/fork-o-marshmallow-PocketCHIP-pocket-home/archive/ jessie main" | sudo tee /etc/apt/sources.list.d/marshmallow-pocket-chip-home.list 0 false}
+12 {0   0 false}
+13 {2 3. Add public key to apt 0 false}
+14 {1 curl -fsSL https://arran4.github.io/fork-o-marshmallow-PocketCHIP-pocket-home/archive/public.key | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pocket-home.gpg 0 false}
+15 {0   0 false}
+16 {2 4. Fix pocket-home package (which is pinned by NTC) 0 false}
+17 {1 echo -e "Package: pocket-home\nPin: version *\nPin-Priority: 1050" | sudo tee /etc/apt/preferences.d/unpin-pocket-home.pref 0 false}
+18 {0   0 false}
+19 {2 5. Update the list of available packages 0 false}
+20 {1 sudo apt-get update 0 false}
+21 {0   0 false}
+22 {2 6. Upgrade pocket-home 0 false}
+23 {1 sudo apt-get install pocket-home 0 false}
+24 {1 ``` 0 false}
+25 {0   0 false}
+26 {0   0 false}
+27 {1 Note: The previous commands need to be typed once, then, upgrading is easy and is done by typing `sudo apt-get update` 0 false}
+28 {0   0 false}
+29 {3 Building from sources 0 false}
+30 {0   0 false}
+31 {5 1. Required Packages 0 false}
+32 {0   0 false}
+33 {1  sudo apt-get install <br> 0 true}
+34 {1  git <br> 0 true}
+35 {1  build-essential <br> 0 true}
+36 {1  libasound2-dev <br> 0 true}
+37 {1  libx11-dev <br> 0 true}
+38 {1  libxrandr-dev <br> 0 true}
+39 {1  libxcursor-dev <br> 0 true}
+40 {1  libxft-dev <br> 0 true}
+41 {1  libxinerama-dev <br> 0 true}
+42 {1  libnm-glib-dev <br> 0 true}
+43 {1  network-manager-dev <br> 0 true}
+44 {1  libi2c-dev <br> 0 true}
+45 {1  libssl-dev <br> 0 true}
+46 {1  libnm-gtk-dev 0 false}
+47 {0   0 false}
+48 {0   0 false}
+49 {5  2. Cloning and building 0 false}
+50 {1  <br> 0 true}
+51 {1  git clone --recursive https://github.com/o-marshmallow/PocketCHIP-pocket-home/ 0 false}
+52 {1  make 0 false}
+53 {1  make devinstall 0 false}
+54 {1  sudo systemctl restart lightdm 0 false}
+55 {0   0 false}
+56 {0   0 false}
+57 {5 3. Updating 0 false}
+58 {0   0 false}
+59 {1  git pull 0 false}
+60 {1  git submodule update 0 false}
+61 {1  make 0 false}
+62 {1  make devinstall 0 false}
+63 {1  sudo systemctl restart lightdm 0 false}
+64 {0   0 false}
+65 {0   0 false}
+66 {4 Thanks 0 false}
+67 {1 Big thanks to <a href="https://github.com/Celti">Celti</a> who made this repo updated to new JUCE version and easier to compile and @sgentle who made the install by apt repository ! 0 false}
+68 {0   0 false}
