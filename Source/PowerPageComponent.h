@@ -19,6 +19,7 @@ public:
     ScopedPointer<TextButton> rebootButton;
     ScopedPointer<TextButton> sleepButton;
     ScopedPointer<TextButton> felButton;
+    ScopedPointer<TextButton> logoutButton;
     ScopedPointer<Label> buildNameLabel;
     ScopedPointer<Label> rev;
     ScopedPointer<Component> mainPage;
