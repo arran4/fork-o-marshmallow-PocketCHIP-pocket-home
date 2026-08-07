@@ -345,7 +345,11 @@ jobs:
               break
             else
               echo "Push failed, attempting to pull with rebase..."
-              git pull --rebase origin "${GITHUB_REF#refs/heads/}"
+              git fetch origin "${GITHUB_REF#refs/heads/}"
+              git reset --hard "origin/${GITHUB_REF#refs/heads/}"
+              sed -i -E "1s/\\([^)]+\\)/($RELEASE_VERSION)/" debian/changelog
+              git add debian/changelog
+              git commit -m "chore: bump release version to $RELEASE_VERSION"
               RETRY_COUNT=$((RETRY_COUNT+1))
               sleep 5
             fi
