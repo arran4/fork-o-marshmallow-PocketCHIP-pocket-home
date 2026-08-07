@@ -50,6 +50,11 @@ PowerPageComponent::PowerPageComponent() {
     felButton->addListener(this);
     addAndMakeVisible(felButton);
 
+    logoutButton = new TextButton("Logout");
+    logoutButton->setButtonText("Logout");
+    logoutButton->addListener(this);
+    addAndMakeVisible(logoutButton);
+
     overlaySpinner = new OverlaySpinner();
     addChildComponent(overlaySpinner);
 
@@ -120,14 +125,14 @@ void PowerPageComponent::resized() {
   overlaySpinner->setBounds(0, 0, bounds.getWidth(), bounds.getHeight());
 
   {
-    unsigned int number = 4;
+    unsigned int number = 5;
 
     for (int i = 0, j = 0; i < number; ++i) {
       if (i > 0) verticalLayout.setItemLayout(j++, 0, -1, -1);
       verticalLayout.setItemLayout(j++, 48, 48, 48);
     }
 
-    Component *powerItems[] = { powerOffButton.get(), rebootButton.get(), sleepButton.get() };
+    Component *powerItems[] = { powerOffButton.get(), rebootButton.get(), sleepButton.get(), logoutButton.get() };
     auto b = bounds.reduced(10);
     b.setLeft(70);
     verticalLayout.layOutComponents(powerItems, 1, b.getX(), b.getY(), b.getWidth(),
@@ -136,10 +141,11 @@ void PowerPageComponent::resized() {
 
   mainPage->setBounds(bounds);
 
-  powerOffButton->setBounds(bounds.getWidth()/7, 40, 350, 40);
-  sleepButton->setBounds(bounds.getWidth()/7, 90, 350, 40);
-  rebootButton->setBounds(bounds.getWidth()/7, 140, 350, 40);
-  felButton->setBounds(bounds.getWidth()/7, 190, 350, 40);
+  powerOffButton->setBounds(bounds.getWidth()/7, 15, 350, 35);
+  sleepButton->setBounds(bounds.getWidth()/7, 60, 350, 35);
+  rebootButton->setBounds(bounds.getWidth()/7, 105, 350, 35);
+  felButton->setBounds(bounds.getWidth()/7, 150, 350, 35);
+  logoutButton->setBounds(bounds.getWidth()/7, 195, 350, 35);
   backButton->setBounds(bounds.getWidth()-60, bounds.getY(), 60, bounds.getHeight());
 
   buildNameLabel->setBounds(bounds.getX(), bounds.getY(), bounds.getWidth(), 30);
@@ -183,6 +189,7 @@ void PowerPageComponent::showPowerSpinner() {
     sleepButton->setVisible(false);
     rebootButton->setVisible(false);
     felButton->setVisible(false);
+    logoutButton->setVisible(false);
     overlaySpinner->setVisible(true);
 }
 
@@ -208,5 +215,8 @@ void PowerPageComponent::buttonClicked(Button *button) {
     setSleep();
   } else if (button == felButton) {
     getMainStack().pushPage(felPage, PageStackComponent::kTransitionTranslateHorizontalLeft);
+  } else if (button == logoutButton) {
+    showPowerSpinner();
+    JUCEApplication::getInstance()->systemRequestedQuit();
   }
 }
