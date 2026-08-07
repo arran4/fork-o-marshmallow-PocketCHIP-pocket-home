@@ -335,10 +335,26 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Commit and push
+          # Commit and push, handling race conditions from concurrent pushes
           git add debian/changelog
           git commit -m "chore: bump release version to $RELEASE_VERSION"
-          git push origin "HEAD:${GITHUB_REF#refs/heads/}"
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if git push origin "HEAD:${GITHUB_REF#refs/heads/}"; then
+              break
+            else
+              echo "Push failed, attempting to pull with rebase..."
+              git pull --rebase origin "${GITHUB_REF#refs/heads/}"
+              RETRY_COUNT=$((RETRY_COUNT+1))
+              sleep 5
+            fi
+          done
+
+          if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+            echo "Failed to push after $MAX_RETRIES attempts."
+            exit 1
+          fi
 
           # Tag and push tag
           git tag -f "$RELEASE_TAG"
