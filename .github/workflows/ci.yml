@@ -154,6 +154,8 @@ jobs:
           arch: armv7
           distro: none
           base_image: arm32v7/debian:jessie
+          env: |
+            TAG: ${{ github.ref_name }}
           install: |
             cat << 'EOF' > /etc/apt/sources.list
             deb http://archive.debian.org/debian jessie main
@@ -289,7 +291,7 @@ jobs:
         uses: uraimo/run-on-arch-action@v2
         id: build
         with:
-          arch: none
+          arch: armv7
           distro: none
           base_image: arm32v7/debian:jessie
           env: |
