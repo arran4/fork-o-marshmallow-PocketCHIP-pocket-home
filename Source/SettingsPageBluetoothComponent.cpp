@@ -16,7 +16,7 @@ void BluetoothDeviceListItem::paintButton(Graphics &g, bool isMouseOverButton, b
   g.setColour(findColour(ListBox::ColourIds::backgroundColourId));
   g.fillPath(listOutline);
 
-  if (device->connected) {
+  if (device->connected && icons->checkIcon != nullptr) {
     icons->checkIcon->setSize(h, h);
     icons->checkIcon->drawWithin(g, iconBounds, RectanglePlacement::fillDestination, 1.0f);
   }
