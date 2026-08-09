@@ -10,11 +10,13 @@ void BluetoothDeviceListItem::paintButton(Graphics &g, bool isMouseOverButton, b
   auto inset = bounds.reduced(6, 4);
   auto w = bounds.getWidth(), h = bounds.getHeight();
   auto iconBounds = Rectangle<float>(w - h, h/5.0, h*0.6, h*0.6);
+  auto borderThick = 4.0;
 
-  auto listOutline = Path();
-  listOutline.addRoundedRectangle(inset.toFloat(), 10.0f);
   g.setColour(findColour(ListBox::ColourIds::backgroundColourId));
-  g.fillPath(listOutline);
+  g.setOpacity(isButtonDown ? 0.5f : 1.0f);
+  g.drawRoundedRectangle(bounds.getX() + borderThick, bounds.getY() + borderThick,
+                         bounds.getWidth() - 2*borderThick, bounds.getHeight()  - 2*borderThick,
+                         1, borderThick);
 
   if (device->connected && icons->checkIcon != nullptr) {
     icons->checkIcon->setSize(h, h);
@@ -32,6 +34,9 @@ void BluetoothDeviceListItem::paintButton(Graphics &g, bool isMouseOverButton, b
 }
 
 SettingsPageBluetoothComponent::SettingsPageBluetoothComponent() {
+  bgColor = Colour(PokeLookAndFeel::chipPurple);
+  bgImage = createImageFromFile(assetFile("settingsBackground.png"));
+
   pageStack = new PageStackComponent();
   addAndMakeVisible(pageStack);
 
@@ -78,7 +83,11 @@ SettingsPageBluetoothComponent::SettingsPageBluetoothComponent() {
 
 SettingsPageBluetoothComponent::~SettingsPageBluetoothComponent() {}
 
-void SettingsPageBluetoothComponent::paint(Graphics &g) {}
+void SettingsPageBluetoothComponent::paint(Graphics &g) {
+  auto bounds = getLocalBounds();
+  g.fillAll(bgColor);
+  g.drawImage(bgImage,bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(), 0, 0, bgImage.getWidth(), bgImage.getHeight(), false);
+}
 
 
 void SettingsPageBluetoothComponent::resized() {
