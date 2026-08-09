@@ -1,17 +1,17 @@
 Package: pocket-home
-Version: 0.0.6
+Version: 0.0.7
 Architecture: armhf
 Maintainer: Andrew Hay Kurtz <software@nextthing.co>
-Installed-Size: 24344
+Installed-Size: 3298
 Depends: libasound2 (>= 1.0.16), libc6 (>= 2.12), libdbus-1-3 (>= 1.0.2), libdbus-glib-1-2 (>= 0.78), libfreetype6 (>= 2.2.1), libgcc1 (>= 1:4.4.0), libglib2.0-0 (>= 2.16.0), libnm-glib4 (>= 0.9.8.8), libnm-util2 (>= 0.8.998), libssl1.0.0 (>= 1.0.0), libstdc++6 (>= 4.9), libx11-6, libxext6, libxinerama1, network-manager
 Homepage: http://opensource.nextthing.co
 Priority: optional
 Section: x11
-Filename: pool/main/p/pocket-home/pocket-home_0.0.6_armhf.deb
-Size: 6723516
-SHA256: 5aa8f9158d38540c53f3a2d3b53b5805c41c90fa138510b12bda27d513232cd8
-SHA1: 7eb6c6151ae599a8005d9eb5d05556d819145b7c
-MD5sum: 84035d9b8f34ce546c4b481d6e0f1fb0
+Filename: pool/main/p/pocket-home/pocket-home_0.0.7_armhf.deb
+Size: 1296196
+SHA256: 02021d4f8f2efb73753f374484e460fbc9e3ccbfef22245e36e959099b2b728d
+SHA1: 17f32e45690fbc91a4b2fd0b10e12405246011da
+MD5sum: 10606b320e703f73657b51f7b11625ff
 Description: home screen for PocketCHIP
  It can launch programs and change system settings
 
