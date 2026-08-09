@@ -322,16 +322,21 @@ jobs:
             fi
             if [ -n "$TAG" ]; then
               VERSION="${TAG#v}"
-              sed -i -E "1s/\([^)]+\)/($VERSION)/" debian/changelog
+              sed -i "1s/([^)]*)/($VERSION)/" debian/changelog
             fi
-            dpkg-buildpackage -aarmhf -us -uc -b
+
+            if [[ "$TAG" == *"-test"* || "$TAG" == *"-rc"* || "$TAG" == *"-alpha"* || "$TAG" == *"-snapshot"* || "$TAG" == *"-debug"* ]]; then
+              sed -i 's/build\/Release\/pocket-home/build\/ReleaseDebug\/pocket-home/g' debian/install
+            fi
+
+            dpkg-buildpackage -nc -aarmhf -us -uc -b
             mkdir -p out
-            cp ../pocket-home_*.deb out/
+            cp ../pocket-home*.deb out/
       - uses: actions/upload-artifact@v4
         with:
           name: pocket-home-deb
           retention-days: 1
-          path: out/pocket-home_*.deb
+          path: out/pocket-home*.deb
 
       - name: Sync version source and tag commit
         if: ${{ (github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-')) || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) }}
@@ -341,7 +346,7 @@ jobs:
           RELEASE_VERSION="${RELEASE_TAG#v}"
 
           # Update changelog
-          sed -i -E "1s/\\([^)]+\\)/($RELEASE_VERSION)/" debian/changelog
+          sed -i "1s/([^)]*)/($RELEASE_VERSION)/" debian/changelog
 
           # Configure Git
           git config user.name "github-actions[bot]"

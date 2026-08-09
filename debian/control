@@ -13,3 +13,9 @@ Architecture: armhf
 Depends: ${shlibs:Depends}, ${misc:Depends}, libnm-glib4, network-manager
 Description: home screen for PocketCHIP
  It can launch programs and change system settings
+
+Package: pocket-home-dbg
+Architecture: armhf
+Depends: pocket-home (= ${binary:Version}), ${misc:Depends}
+Description: debugging symbols for pocket-home
+ This package contains the debugging symbols for pocket-home.
