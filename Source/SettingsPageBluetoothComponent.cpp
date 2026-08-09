@@ -1,6 +1,7 @@
 #include "SettingsPageBluetoothComponent.h"
 #include "Main.h"
 #include "Utils.h"
+#include "PokeLookAndFeel.h"
 
 BluetoothDeviceListItem::BluetoothDeviceListItem(BluetoothDevice *device, BTIcons *icons)
 : Button{ device->name }, device(device), icons{ icons } {}
