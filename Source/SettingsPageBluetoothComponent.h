@@ -29,6 +29,9 @@ public:
   SettingsPageBluetoothComponent();
   ~SettingsPageBluetoothComponent();
 
+  Colour bgColor;
+  Image bgImage;
+
   bool init = false;
 
   bool bluetoothEnabled = true;
