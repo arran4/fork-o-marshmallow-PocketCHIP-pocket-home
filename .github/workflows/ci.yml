@@ -358,8 +358,16 @@ jobs:
               cp ../pocket-home*.tar.* out/ || true
               cp ../pocket-home*_source.changes out/ || true
             else
+              # Debug output for testing
+              find .. -maxdepth 1 -name "pocket-home*.deb" || true
+              ls -R .. || true
+
               # Only copy the main deb (exclude the -dbg deb if it somehow exists)
-              find .. -maxdepth 1 -name "pocket-home*.deb" ! -name "pocket-home-dbg*.deb" -exec cp {} out/ \;
+              for f in ../pocket-home*.deb; do
+                if [[ "$f" != *"-dbg"* ]]; then
+                  cp "$f" out/ || true
+                fi
+              done
             fi
       - uses: actions/upload-artifact@v4
         with:
