@@ -345,19 +345,42 @@ jobs:
             fi
 
             dpkg-buildpackage -nc -aarmhf -us -uc -b
+
+            # Build the source package
+            dpkg-buildpackage -nc -S -us -uc || true
+
             mkdir -p out
             cp ../pocket-home*.deb out/
+            cp ../pocket-home*.dsc out/ || true
+            cp ../pocket-home*.tar.* out/ || true
+            cp ../pocket-home*_source.changes out/ || true
       - uses: actions/upload-artifact@v4
         with:
           name: pocket-home-deb
           retention-days: 1
-          path: out/pocket-home*.deb
+          path: |
+            out/pocket-home*.deb
+            out/pocket-home*.dsc
+            out/pocket-home*.tar.*
+            out/pocket-home*_source.changes
 
       - name: Sync version source and tag commit
         if: ${{ (github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-')) || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) }}
         run: |
           set -euo pipefail
           RELEASE_TAG="${{ needs.prepare-release-tag.outputs.release_tag }}"
+
+          # Don't overwrite stable tags in git if it's a test/debug release mode,
+          # just use the branch reference.
+          if [[ "$RELEASE_TAG" == *"-test"* || "$RELEASE_TAG" == *"-rc"* || "$RELEASE_TAG" == *"-alpha"* || "$RELEASE_TAG" == *"-snapshot"* || "$RELEASE_TAG" == *"-debug"* ]]; then
+             echo "Skipping git branch version bump and stable tag overwrite for non-stable build ($RELEASE_TAG)."
+             # We still want to tag the specific test release, but not commit/push it back
+             # to the stable main branch history rewriting the changelog.
+             git tag -f "$RELEASE_TAG"
+             git push -f origin "$RELEASE_TAG" || { sleep 2; git push -f origin "$RELEASE_TAG"; }
+             exit 0
+          fi
+
           RELEASE_VERSION="${RELEASE_TAG#v}"
 
           # Update changelog
@@ -408,9 +431,10 @@ jobs:
           fi
 
           # Use Announcement category if possible, else standard notes
-          gh release create "$TAG" out/*.deb --generate-notes $prerelease --discussion-category Announcements || \
-            gh release create "$TAG" out/*.deb --generate-notes $prerelease || \
-            gh release upload "$TAG" out/*.deb --clobber || true
+          # Also upload source artifacts if they exist
+          gh release create "$TAG" out/* --generate-notes $prerelease --discussion-category Announcements || \
+            gh release create "$TAG" out/* --generate-notes $prerelease || \
+            gh release upload "$TAG" out/* --clobber || true
 
       - name: Checkout gh-pages
         uses: actions/checkout@v4

@@ -88,7 +88,9 @@ void SettingsPageBluetoothComponent::resized() {
   pageStack->setBounds(pageBounds);
   connectionLabel->setBounds(10, 70, pageBounds.getWidth() - 20, 60);
   connectionButton->setBounds(90, 160, pageBounds.getWidth() - 180, 50);
-  btIcon->setBounds(-10, 0, 80, 80);
+  if (btIcon != nullptr) {
+    btIcon->setBounds(-10, 0, 80, 80);
+  }
   backButton->setBounds(bounds.getX(), bounds.getY(), 60, bounds.getHeight());
 
   if (!init) { // TODO: Stupid shim to layout page correctly.
