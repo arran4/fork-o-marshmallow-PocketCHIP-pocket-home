@@ -2,25 +2,25 @@
 Hash: SHA512
 
 Codename: jessie
-Date: Mon, 10 Aug 2026 01:32:35 UTC
+Date: Mon, 10 Aug 2026 04:11:50 UTC
 Architectures: armhf
 Components: main
 MD5Sum:
- 7cacdb731b790e03029ffc5f6ba31f98 1481 main/binary-armhf/Packages
- f012c9b7369444ee948aea4126e42cf3 738 main/binary-armhf/Packages.gz
+ a593796665d8806f87ea549e0f97b8ff 1481 main/binary-armhf/Packages
+ cc65945213ecf3bf8d7759ec573e3756 739 main/binary-armhf/Packages.gz
  12961a515ba3ee17d1840d76faa90087 36 main/binary-armhf/Release
 SHA1:
- 5afd8d6bafec1f79981fa55efae84b28d5caa39c 1481 main/binary-armhf/Packages
- ceec5a436c1acd8778c2ca2df1ab412d41f8093c 738 main/binary-armhf/Packages.gz
+ 5bcb94773cb24920b7d4c31b87f042cd4cab45f9 1481 main/binary-armhf/Packages
+ ed99e1b7d2681d4aea8d41333985d47d856807fb 739 main/binary-armhf/Packages.gz
  4922cd1d17e2d85529687db8f44c58948bc42f94 36 main/binary-armhf/Release
 SHA256:
- cc3dea0e9f017abecc9ad3942f2f3b519c584e94d380de3139ba77dcde88aa52 1481 main/binary-armhf/Packages
- 23e8d4c7856f7964561f108fa3982d2d6968925cc8cfe1b4490a2f6154398b31 738 main/binary-armhf/Packages.gz
+ 15cce6fdc949e708a3dabf3dfc54f594edb2d1710d534c1e954ddaeb5e034c30 1481 main/binary-armhf/Packages
+ b03cca9bba3b5bca772b737752290bc0010edb46b38dca0ef2ab3033b09c96bc 739 main/binary-armhf/Packages.gz
  adaec1ced8009abfb20fa51310087da3b7332d5f3b2c5edfda188ddffe634677 36 main/binary-armhf/Release
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQRskP88OK/1khDssiMxWUlxObzxAQUCankqNAAKCRAxWUlxObzx
-AUDEAP4vTiRmbozWfePKq85RUO1khqFBbFUYWg/4zLl6vJ6Z+QD9GLP8Gx9YQs2h
-MC2c0SakujOUE1yFUPn+pHdQSt66YAw=
-=Z+W6
+iHUEARYKAB0WIQRskP88OK/1khDssiMxWUlxObzxAQUCanlPhwAKCRAxWUlxObzx
+ATCaAQDW48NfQfYWu+2ywuzO7kWo2TWEPs7rEop119tdtxF9OgD8CKy0Rpb03Bwu
+fxY2X8SYL4al43iGA4HcxXNYXj++nAs=
+=viZY
 -----END PGP SIGNATURE-----
