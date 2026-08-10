@@ -395,24 +395,26 @@ jobs:
 
           RELEASE_VERSION="${RELEASE_TAG#v}"
 
-          # Update changelog
-          sed -i "1s/([^)]*)/($RELEASE_VERSION)/" debian/changelog
-
           # Configure Git
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           # Commit and push, handling race conditions from concurrent pushes
-          git add debian/changelog
-          git commit -m "chore: bump release version to $RELEASE_VERSION"
           MAX_RETRIES=3
           RETRY_COUNT=0
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            # Update changelog
+            sed -i "1s/([^)]*)/($RELEASE_VERSION)/" debian/changelog
+
+            git add debian/changelog
+            git commit -m "chore: bump release version to $RELEASE_VERSION" || true
+
             if git push origin "HEAD:${GITHUB_REF#refs/heads/}"; then
               break
             else
-              echo "Push failed, attempting to pull with rebase..."
-              git pull --rebase origin "${GITHUB_REF#refs/heads/}"
+              echo "Push failed, attempting to fetch and reset..."
+              git fetch origin "${GITHUB_REF#refs/heads/}"
+              git reset --hard FETCH_HEAD
               RETRY_COUNT=$((RETRY_COUNT+1))
               sleep 5
             fi
